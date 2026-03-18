@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Smart City</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-dark bg-primary mb-4">
+        <div class="container">
+            <span class="navbar-brand mb-0 h1">Akimat Admin Dashboard</span>
+            <div class="text-white">
+                Moderator: <strong>{{ username }}</strong> |
+                <a href="/logout" class="btn btn-sm btn-outline-light ms-2">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h3 class="mb-4">Reported City Issues</h3>
+
+        <table class="table table-bordered table-striped bg-white shadow-sm">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Photo</th>
+                    <th>Description</th>
+                    <th>AI Suggestion (CV)</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in complaints %}
+                <tr>
+                    <td class="align-middle">{{ row['id'] }}</td>
+                    <td class="align-middle">
+                        <img src="/static/uploads/{{ row['photo_filename'] }}" width="150" alt="Issue Photo" class="img-thumbnail">
+                    </td>
+                    <td class="align-middle">{{ row['description'] }}</td>
+                    <td class="align-middle"><strong class="text-success">{{ row['ai_suggestion'] }}</strong></td>
+                    <td class="align-middle">
+                        <form action="/update_status/{{ row['id'] }}" method="POST" class="m-0">
+                            <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="Pending" {% if row['status'] == 'Pending' %}selected{% endif %}>🟡 Pending</option>
+                                <option value="In Progress" {% if row['status'] == 'In Progress' %}selected{% endif %}>🔵 In Progress</option>
+                                <option value="Resolved" {% if row['status'] == 'Resolved' %}selected{% endif %}>🟢 Resolved</option>
+                            </select>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center py-4">No issues reported yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>
