@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart City - Auth Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+        /* Темная тема по макетам UI/UX */
+        body {
+            background-color: #072646;
+            /* Глубокий синий фон */
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo-text {
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: 1px;
+        }
+
+        .logo-subtext {
+            font-size: 0.8rem;
+            color: #82a3c4;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .auth-card {
+            background-color: #0b345d;
+            border-radius: 20px;
+            border: 1px solid #14467a;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-pills {
+            background-color: #072646;
+            border-radius: 12px;
+            padding: 5px;
+        }
+
+        .nav-pills .nav-link {
+            color: #82a3c4;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-pills .nav-link.active {
+            background-color: #1768b3;
+            color: white;
+            font-weight: bold;
+        }
+
+        .form-label {
+            font-size: 0.75rem;
+            color: #82a3c4;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .form-control {
+            background-color: #0f4073;
+            border: 1px solid #1a518b;
+            color: white;
+            border-radius: 10px;
+            padding: 10px 15px;
+        }
+
+        .form-control:focus {
+            background-color: #134b85;
+            border-color: #29a0e3;
+            color: white;
+            box-shadow: none;
+        }
+
+        .form-control::placeholder {
+            color: #5d81a6;
+        }
+
+        .btn-primary {
+            background-color: #2fb1f5;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            padding: 10px;
+        }
+
+        .btn-primary:hover {
+            background-color: #2699d6;
+        }
+
+        .staff-warning {
+            background-color: #094378;
+            border: 1px solid #125491;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            color: #55b6f0;
+        }
+
+        .switch-link {
+            color: #55b6f0;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+
+        .switch-link:hover {
+            color: #8cd0f7;
+            text-decoration: underline;
+        }
+
+        .footer-text {
+            font-size: 0.75rem;
+            color: #4a6f94;
+        }
+    </style>
+</head>
+
+<body>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="position-fixed top-0 start-50 translate-middle-x w-100" style="z-index: 1050;">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show text-center m-0 shadow" role="alert">
+            <strong>System:</strong> {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <div class="container flex-grow-1 d-flex flex-column justify-content-center align-items-center">
+
+        <div class="text-center mb-4">
+            <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                <span style="font-size: 2rem;">📊</span>
+                <span class="logo-text">Smart City</span>
+            </div>
+            <div class="logo-subtext">CITIZEN & STAFF PORTAL</div>
+        </div>
+
+        <div class="auth-card p-4 col-12 col-md-6 col-lg-4">
+
+            <ul class="nav nav-pills nav-justified mb-4" id="loginTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="citizen-tab" data-bs-toggle="pill"
+                        data-bs-target="#citizen-pane" type="button" role="tab">👤 Citizen</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="staff-tab" data-bs-toggle="pill" data-bs-target="#staff-pane"
+                        type="button" role="tab">🏛️ Akimat Staff</button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="loginTabsContent">
+
+                <div class="tab-pane fade show active" id="citizen-pane" role="tabpanel">
+
+                    <div id="citizen-login-block">
+                        <h4 class="fw-bold mb-1">Welcome back</h4>
+                        <p class="text-muted mb-4" style="font-size: 0.9rem;">Sign in to report city issues</p>
+
+                        <form action="{{ url_for('do_login') }}" method="POST">
+                            <input type="hidden" name="login_type" value="citizen">
+                            <div class="mb-3">
+                                <label class="form-label">Username</label>
+                                <input type="text" name="username" class="form-control"
+                                    placeholder="Enter your username" required>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label">Password</label>
+                                <input type="password" name="password" class="form-control" placeholder="••••••••"
+                                    required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 mb-3">Sign in to Citizen Portal
+                                →</button>
+                        </form>
+
+                        <div class="text-center">
+                            <span class="text-muted" style="font-size: 0.85rem;">Don't have an account? </span>
+                            <span class="switch-link fw-bold" onclick="toggleAuthMode('register')">Register here</span>
+                        </div>
+                    </div>
+
+                    <div id="citizen-register-block" class="d-none">
+                        <h4 class="fw-bold mb-1">Create Account</h4>
+                        <p class="text-muted mb-4" style="font-size: 0.9rem;">Join Smart City — report issues in your
+                            area</p>
+
+                        <form action="{{ url_for('handle_registration') }}" method="POST">
+                            <div class="mb-3">
+                                <label class="form-label">Username</label>
+                                <input type="text" name="username" class="form-control" placeholder="Choose a username"
+                                    required>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label">Password</label>
+                                <input type="password" name="password" class="form-control" placeholder="••••••••"
+                                    required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 mb-3">Create Account →</button>
+                        </form>
+
+                        <div class="text-center">
+                            <span class="switch-link" onclick="toggleAuthMode('login')">← Back to login</span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="tab-pane fade" id="staff-pane" role="tabpanel">
+                    <h4 class="fw-bold mb-1">Staff Access</h4>
+                    <p class="text-muted mb-3" style="font-size: 0.9rem;">Authorized Akimat personnel only</p>
+
+                    <div class="staff-warning p-3 mb-4 d-flex align-items-center gap-2">
+                        <span>🔒</span>
+                        <span>This area is restricted to verified government employees</span>
+                    </div>
+
+                    <form action="{{ url_for('do_login') }}" method="POST">
+                        <input type="hidden" name="login_type" value="staff">
+                        <div class="mb-3">
+                            <label class="form-label">Staff ID / Username</label>
+                            <input type="text" name="username" class="form-control" placeholder="staff.username"
+                                required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label">Password</label>
+                            <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary w-50" style="background-color: #2fb1f5;">Login
+                                as Moderator</button>
+                            <button type="submit" class="btn btn-dark w-50"
+                                style="background-color: #072646; border: 1px solid #1a518b;">Login as Akim</button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="footer-text mt-4 text-center">
+            Smart City Platform • Powered by Gemini AI • Akimat System
+        </div>
+
+    </div>
+
+    <script>
+        function toggleAuthMode(mode) {
+            const loginBlock = document.getElementById('citizen-login-block');
+            const registerBlock = document.getElementById('citizen-register-block');
+
+            if (mode === 'register') {
+                loginBlock.classList.add('d-none');
+                registerBlock.classList.remove('d-none');
+            } else {
+                registerBlock.classList.add('d-none');
+                loginBlock.classList.remove('d-none');
+            }
+        }
+        // Handle initial state if we came from /register route
+        {% if show_reg %}
+        toggleAuthMode('register');
+        {% endif %}
+    </script>
+</body>
+
+</html>

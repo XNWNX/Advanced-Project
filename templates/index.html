@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart City - Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            background-color: #061d36;
+            color: #e2e8f0;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background-color: #031427;
+            min-height: 100vh;
+            border-right: 1px solid #143557;
+            padding-top: 20px;
+        }
+
+        .logo-text {
+            font-weight: 800;
+            font-size: 1.2rem;
+            color: #fff;
+        }
+
+        .nav-link {
+            color: #8aacc8;
+            border-radius: 8px;
+            margin: 4px 15px;
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background-color: #0f3d6a;
+            color: white;
+            font-weight: 600;
+        }
+
+        .section-title {
+            font-size: 0.65rem;
+            color: #5a7b9a;
+            margin: 15px 0 5px 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Cards & UI */
+        .dashboard-card {
+            background-color: #0b2e53;
+            border-radius: 12px;
+            border: 1px solid #143557;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .kpi-card {
+            background-color: #0b2e53;
+            border-radius: 12px;
+            border: 1px solid #143557;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .kpi-num {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #38bdf8;
+            line-height: 1;
+        }
+
+        .kpi-label {
+            font-size: 0.8rem;
+            color: #8aacc8;
+            margin-top: 5px;
+        }
+
+        /* Forms */
+        .form-control {
+            background-color: #061d36;
+            border: 1px solid #143557;
+            color: white;
+            border-radius: 8px;
+        }
+
+        .form-control:focus {
+            background-color: #092442;
+            border-color: #38bdf8;
+            color: white;
+            box-shadow: none;
+        }
+
+        .form-label {
+            color: #8aacc8;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background-color: #298ebd;
+            border: none;
+            font-weight: 600;
+            border-radius: 8px;
+        }
+
+        .btn-primary:hover {
+            background-color: #1e749e;
+        }
+
+        /* Tables */
+        .table {
+            color: #e2e8f0;
+            margin-bottom: 0;
+        }
+
+        .table th {
+            border-bottom: 1px solid #143557;
+            color: #5a7b9a;
+            font-weight: 500;
+            font-size: 0.8rem;
+            background-color: transparent;
+        }
+
+        .table td {
+            border-bottom: 1px solid #143557;
+            padding: 15px 10px;
+            background-color: transparent;
+        }
+
+        /* Badges */
+        .badge-pending {
+            background-color: transparent;
+            border: 1px solid #f59e0b;
+            color: #f59e0b;
+            border-radius: 15px;
+        }
+
+        .badge-approved {
+            background-color: transparent;
+            border: 1px solid #10b981;
+            color: #10b981;
+            border-radius: 15px;
+        }
+
+        .badge-rejected {
+            background-color: transparent;
+            border: 1px solid #ef4444;
+            color: #ef4444;
+            border-radius: 15px;
+        }
+
+        #map,
+        #cityMap {
+            border-radius: 10px;
+            border: 1px solid #143557;
+            z-index: 1;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3 col-lg-2 sidebar d-flex flex-column px-0 position-fixed" style="width: 18%;">
+                <div class="d-flex align-items-center gap-2 px-4 mb-4">
+                    <div class="bg-primary text-white rounded p-1" style="line-height: 1;">📊</div>
+                    <div>
+                        <div class="logo-text">Smart City</div>
+                        <div style="font-size: 0.65rem; color: #5a7b9a; letter-spacing: 1px;">PORTAL</div>
+                    </div>
+                </div>
+
+                <div class="section-title">MAIN</div>
+                <a class="nav-link active" id="tab-dashboard" onclick="switchTab('dashboard')">🏠 Dashboard</a>
+                <a class="nav-link" id="tab-report" onclick="switchTab('report')">📝 Report Issue</a>
+                <a class="nav-link d-flex justify-content-between align-items-center" id="tab-history"
+                    onclick="switchTab('history')">
+                    <span>📋 My Reports</span>
+                    {% if stats.total > 0 %}<span class="badge bg-danger rounded-pill">{{ stats.total }}</span>{% endif
+                    %}
+                </a>
+
+                <div class="section-title mt-3">CITY</div>
+                <a class="nav-link" id="tab-map" onclick="switchTab('map')">🗺️ City Map</a>
+                <a class="nav-link" id="tab-stats" onclick="switchTab('stats')">📈 Statistics</a>
+
+                <div class="mt-auto p-3">
+                    <div class="dashboard-card p-3 d-flex align-items-center gap-3 mb-2">
+                        <div class="rounded-circle bg-primary text-white d-flex justify-content-center align-items-center"
+                            style="width: 35px; height: 35px; font-weight: bold;">
+                            {{ username[0]|upper }}
+                        </div>
+                        <div>
+                            <div class="fw-bold" style="font-size: 0.9rem; color: white;">{{ username }}</div>
+                            <div style="font-size: 0.75rem; color: #8aacc8;">Citizen</div>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('sign_out') }}" class="nav-link text-danger text-center"><small>🚪
+                            Logout</small></a>
+                </div>
+            </div>
+
+            <div class="col-md-9 col-lg-10 offset-md-3 offset-lg-2 p-4" style="margin-left: 18%; width: 82%;">
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm"
+                    style="background-color: #0f3d6a; color: white; border: 1px solid #298ebd;" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+
+                <div id="section-dashboard">
+                    <h4 class="mb-0 fw-bold">Dashboard</h4>
+                    <p style="color: #8aacc8; font-size: 0.85rem;" class="mb-4">Smart City Citizen Portal</p>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <div class="kpi-card">
+                                <div class="kpi-num">{{ stats.total }}</div>
+                                <div class="kpi-label">My Reports</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="kpi-card">
+                                <div class="kpi-num text-warning">{{ stats.pending }}</div>
+                                <div class="kpi-label">Pending Review</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="kpi-card">
+                                <div class="kpi-num text-success">{{ stats.resolved }}</div>
+                                <div class="kpi-label">Resolved Issues</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="kpi-card">
+                                <div class="kpi-num text-info">94%</div>
+                                <div class="kpi-label">AI Accuracy</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <div class="dashboard-card h-100">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="mb-0 fw-bold">Recent Complaints</h6>
+                                    <a href="#" onclick="switchTab('history')"
+                                        style="color: #38bdf8; font-size: 0.8rem; text-decoration: none;">View all →</a>
+                                </div>
+                                {% for row in complaints[:4] %}
+                                <div class="d-flex justify-content-between align-items-center mb-3 pb-3"
+                                    style="border-bottom: 1px solid #143557;">
+                                    <div class="d-flex gap-3 align-items-center">
+                                        <img src="/static/uploads/{{ row['photo_filename'] }}" width="40" height="40"
+                                            class="rounded" style="object-fit: cover;">
+                                        <div>
+                                            <div style="font-size: 0.85rem; font-weight: 600;">{{ row['location'] }}
+                                            </div>
+                                            <div style="font-size: 0.75rem; color: #8aacc8;">{{ row['ai_suggestion'] }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        {% if row['mod_status'] == 'Pending' %}<span
+                                            class="badge badge-pending">Pending</span>
+                                        {% elif row['mod_status'] == 'Rejected' %}<span
+                                            class="badge badge-rejected">Rejected</span>
+                                        {% elif row['akim_decision'] == 'Resolved' %}<span
+                                            class="badge badge-approved">Resolved</span>
+                                        {% else %}<span class="badge badge-approved">Approved</span>{% endif %}
+                                    </div>
+                                </div>
+                                {% else %}
+                                <p style="color: #8aacc8; font-size: 0.85rem;">No recent complaints.</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="dashboard-card mb-3" style="cursor: pointer;" onclick="switchTab('report')">
+                                <h6 class="mb-1 fw-bold">📝 New Report</h6>
+                                <p style="color: #8aacc8; font-size: 0.8rem; margin:0;">Report a city issue</p>
+                            </div>
+                            <div class="dashboard-card mb-3" style="cursor: pointer;" onclick="switchTab('map')">
+                                <h6 class="mb-1 fw-bold">🗺️ City Map</h6>
+                                <p style="color: #8aacc8; font-size: 0.8rem; margin:0;">View all issues near you</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section-report" class="d-none">
+                    <h4 class="mb-0 fw-bold">Report Issue</h4>
+                    <p style="color: #8aacc8; font-size: 0.85rem;" class="mb-4">Submit a new city complaint</p>
+                    <div class="dashboard-card col-xl-8">
+                        <p style="color: #8aacc8; font-size: 0.85rem; margin-bottom: 20px;">AI-powered analysis will
+                            automatically categorize your report.</p>
+                        <form action="{{ url_for('take_complaint') }}" method="POST" enctype="multipart/form-data">
+
+                            <div class="mb-4">
+                                <label class="form-label">Location (Click on map)</label>
+                                <div id="map" style="height: 250px;"></div>
+                                <input type="text" class="form-control mt-2" id="location" name="location"
+                                    placeholder="Address will auto-fill..." readonly required>
+                                <input type="hidden" id="lat" name="lat">
+                                <input type="hidden" id="lng" name="lng">
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label">Issue Description</label>
+                                <textarea class="form-control" name="description" rows="3"
+                                    placeholder="Describe the problem in detail..." required></textarea>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label">Upload Photo</label>
+                                <div class="p-4 text-center border rounded"
+                                    style="border-color: #143557 !important; border-style: dashed !important; background-color: #061d36;">
+                                    <input class="form-control mb-2" type="file" name="photo" accept="image/*" required>
+                                    <small style="color: #8aacc8; font-size: 0.75rem;">JPG, PNG up to 10 MB. Photo helps
+                                        AI analyze the issue.</small>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-3 mt-4">
+                                <button type="submit" class="btn btn-primary px-4 py-2">Submit Report 📤</button>
+                                <button type="reset"
+                                    class="btn btn-outline-secondary text-white border-0">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="section-history" class="d-none">
+                    <h4 class="mb-0 fw-bold">My Reports</h4>
+                    <p style="color: #8aacc8; font-size: 0.85rem;" class="mb-4">Track your submitted complaints</p>
+                    <div class="dashboard-card p-0 overflow-hidden">
+                        <div class="d-flex gap-4 px-4 pt-3 pb-2" style="border-bottom: 1px solid #143557;">
+                            <span
+                                style="color: #38bdf8; font-size: 0.85rem; font-weight: 600; cursor: pointer; border-bottom: 2px solid #38bdf8; padding-bottom: 5px;">All
+                                ({{ stats.total }})</span>
+                            <span style="color: #8aacc8; font-size: 0.85rem; cursor: pointer;">Pending ({{ stats.pending
+                                }})</span>
+                        </div>
+                        <table class="table table-borderless align-middle mb-0">
+                            <tbody>
+                                {% for row in complaints %}
+                                <tr>
+                                    <td class="px-4" style="width: 60px;">
+                                        <img src="/static/uploads/{{ row['photo_filename'] }}" width="50" height="50"
+                                            class="rounded" style="object-fit: cover;">
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold mb-1" style="font-size: 0.9rem;">{{ row['location'] }}</div>
+                                        <div style="font-size: 0.75rem; color: #8aacc8;">{{ row['ai_suggestion'] }}
+                                        </div>
+                                    </td>
+                                    <td class="text-end px-4">
+                                        {% if row['mod_status'] == 'Pending' %}<span
+                                            class="badge badge-pending px-3 py-2">Pending</span>
+                                        {% elif row['mod_status'] == 'Rejected' %}<span
+                                            class="badge badge-rejected px-3 py-2">Rejected</span>
+                                        {% elif row['akim_decision'] == 'Resolved' %}<span
+                                            class="badge badge-approved px-3 py-2">Resolved</span>
+                                        {% else %}<span class="badge badge-approved px-3 py-2">Approved</span>{% endif
+                                        %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-5" style="color: #8aacc8;">No reports yet.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="section-map" class="d-none">
+                    <h4 class="mb-0 fw-bold">City Map</h4>
+                    <p style="color: #8aacc8; font-size: 0.85rem;" class="mb-4">All active issues in Almaty</p>
+                    <div class="dashboard-card p-3">
+                        <div class="d-flex justify-content-between mb-3 px-2">
+                            <span style="font-size: 0.85rem; font-weight: 600;">Almaty City Issues Map</span>
+                            <span style="font-size: 0.8rem; color: #8aacc8;">{{ all_complaints|length }} active
+                                issues</span>
+                        </div>
+                        <div id="cityMap" style="height: 500px;"></div>
+                        <div class="mt-3 text-center" style="font-size: 0.8rem; color: #8aacc8;">
+                            <span style="color: #ef4444;">🔴 Rejected/Issue</span> &nbsp;&nbsp;
+                            <span style="color: #f59e0b;">🟡 Pending</span> &nbsp;&nbsp;
+                            <span style="color: #10b981;">🟢 Approved/Resolved</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section-stats" class="d-none">
+                    <h4 class="mb-0 fw-bold">Statistics</h4>
+                    <p style="color: #8aacc8; font-size: 0.85rem;" class="mb-4">City performance analytics</p>
+
+                    <div class="row g-4">
+                        <div class="col-md-7">
+                            <div class="dashboard-card">
+                                <h6 class="mb-4" style="font-size: 0.85rem;">Monthly Reports</h6>
+                                <canvas id="barChart" height="200"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="dashboard-card">
+                                <h6 class="mb-4" style="font-size: 0.85rem;">Issue Breakdown</h6>
+                                <canvas id="statusChart" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ---
+        let chartsRendered = false;
+        function switchTab(tabName) {
+            const sections = ['dashboard', 'report', 'history', 'map', 'stats'];
+            sections.forEach(sec => {
+                document.getElementById('section-' + sec).classList.add('d-none');
+                document.getElementById('tab-' + sec).classList.remove('active');
+            });
+            document.getElementById('section-' + tabName).classList.remove('d-none');
+            document.getElementById('tab-' + tabName).classList.add('active');
+
+            // Перерисовка карт (Leaflet багует, если грузится в скрытом div)
+            if (tabName === 'report') { setTimeout(() => { map.invalidateSize(); }, 100); }
+            if (tabName === 'map') { setTimeout(() => { cityMap.invalidateSize(); }, 100); }
+            if (tabName === 'stats' && !chartsRendered) { renderCharts(); chartsRendered = true; }
+        }
+
+        // --- 2. КАРТА В ФОРМЕ ОТПРАВКИ ЖАЛОБЫ ---
+        var almatyBounds = L.latLngBounds(L.latLng(43.05, 76.70), L.latLng(43.40, 77.15));
+
+        // Темная тема для маленькой карты
+        var map = L.map('map', { maxBounds: almatyBounds, minZoom: 11 }).setView([43.2389, 76.8897], 12);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© CARTO' }).addTo(map);
+
+        var marker;
+        map.on('click', function (e) {
+            if (marker) marker.setLatLng(e.latlng);
+            else marker = L.marker(e.latlng).addTo(map);
+
+            // СОХРАНЯЕМ КООРДИНАТЫ В СКРЫТЫЕ ПОЛЯ ДЛЯ БАЗЫ ДАННЫХ!
+            document.getElementById('lat').value = e.latlng.lat;
+            document.getElementById('lng').value = e.latlng.lng;
+            document.getElementById('location').value = "Loading address...";
+
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${e.latlng.lat}&lon=${e.latlng.lng}`)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('location').value = (data.name || data.address.road || "Unknown location") + ", Almaty";
+                }).catch(() => { document.getElementById('location').value = "Coordinates selected"; });
+        });
+
+        // --- 3. БОЛЬШАЯ КАРТА ГОРОДА (НАСТОЯЩИЕ ДАННЫЕ) ---
+        var cityMap = L.map('cityMap', { maxBounds: almatyBounds, minZoom: 11 }).setView([43.2389, 76.8897], 12);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© CARTO' }).addTo(cityMap);
+
+        // Получаем реальные данные из Питона в JavaScript
+        const allComplaints = {{ all_complaints | tojson | safe }};
+
+        // Рисуем настоящие маркеры!
+        allComplaints.forEach(c => {
+            if (c.lat && c.lng) {
+                // Определяем цвет по статусу
+                let circleColor = '#f59e0b'; // Желтый (Pending)
+                if (c.mod_status === 'Approved' || c.akim_decision === 'Resolved') circleColor = '#10b981'; // Зеленый
+                if (c.mod_status === 'Rejected') circleColor = '#ef4444'; // Красный
+
+                L.circle([c.lat, c.lng], {
+                    color: circleColor,
+                    fillColor: circleColor,
+                    fillOpacity: 0.5,
+                    radius: 200
+                }).addTo(cityMap).bindPopup(`<b>${c.location}</b><br><small>${c.description}</small>`);
+            }
+        });
+
+        // --- 4. ГРАФИКИ CHART.JS ---
+        Chart.defaults.color = '#8aacc8';
+        function renderCharts() {
+            // Данные берем из Python!
+            const total = {{ stats.total }
+        };
+        const pending = {{ stats.pending }};
+        const resolved = {{ stats.resolved }};
+        const active = total - pending - resolved;
+
+        new Chart(document.getElementById('statusChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Pending', 'Active/Approved', 'Resolved'],
+                datasets: [{
+                    data: [pending, active, resolved],
+                    backgroundColor: ['#f59e0b', '#38bdf8', '#10b981'],
+                    borderWidth: 0
+                }]
+            },
+            options: { cutout: '75%', plugins: { legend: { position: 'bottom' } } }
+        });
+
+        new Chart(document.getElementById('barChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Week 1', 'Week 2', 'Week 3', 'This Week'],
+                datasets: [{
+                    label: 'Reports Filed',
+                    data: [2, 5, 3, total],
+                    backgroundColor: '#298ebd',
+                    borderRadius: 4
+                }]
+            },
+            options: { scales: { y: { beginAtZero: true, grid: { color: '#143557' } }, x: { grid: { display: false } } } }
+        });
+    }
+    </script>
+
+</body>
+
+</html>

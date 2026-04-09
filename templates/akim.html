@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Akim Decision Center - Smart City</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Цветовая палитра */
+        body {
+            background-color: #061d36;
+            color: #e2e8f0;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Боковое меню */
+        .sidebar {
+            background-color: #031427;
+            min-height: 100vh;
+            border-right: 1px solid #143557;
+            padding-top: 20px;
+        }
+
+        .logo-text {
+            font-weight: 800;
+            font-size: 1.2rem;
+            color: #fff;
+        }
+
+        .nav-link {
+            color: #8aacc8;
+            border-radius: 8px;
+            margin: 4px 15px;
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background-color: #0f3d6a;
+            color: white;
+            font-weight: 600;
+        }
+
+        .section-title {
+            font-size: 0.65rem;
+            color: #5a7b9a;
+            margin: 15px 0 5px 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Карточки KPI */
+        .dashboard-card {
+            background-color: #0b2e53;
+            border-radius: 12px;
+            border: 1px solid #143557;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .kpi-card {
+            background-color: #0b2e53;
+            border-radius: 12px;
+            border: 1px solid #143557;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .kpi-num {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #38bdf8;
+            line-height: 1;
+        }
+
+        .kpi-num.red {
+            color: #ef4444;
+        }
+
+        .kpi-num.green {
+            color: #10b981;
+        }
+
+        .kpi-label {
+            font-size: 0.8rem;
+            color: #8aacc8;
+            margin-top: 5px;
+        }
+
+        /* Настройки таблиц */
+        .table {
+            color: #e2e8f0;
+            margin-bottom: 0;
+        }
+
+        .table th {
+            border-bottom: 1px solid #143557;
+            color: #5a7b9a;
+            font-weight: 600;
+            font-size: 0.75rem;
+            background-color: transparent;
+            text-transform: uppercase;
+        }
+
+        .table td {
+            border-bottom: 1px solid #143557;
+            background-color: transparent;
+            vertical-align: top;
+            padding: 20px 10px;
+        }
+
+        /* Элементы внутри карточки жалобы */
+        .info-label {
+            font-size: 0.65rem;
+            color: #5a7b9a;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .ai-analysis-box {
+            background-color: rgba(56, 189, 248, 0.05);
+            border-left: 3px solid #38bdf8;
+            padding: 12px;
+            border-radius: 0 8px 8px 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .ai-analysis-header {
+            color: #38bdf8;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 6px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Формы Акима */
+        .form-select,
+        .form-control {
+            background-color: #061d36;
+            border: 1px solid #143557;
+            color: white;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .form-select:focus,
+        .form-control:focus {
+            background-color: #092442;
+            border-color: #38bdf8;
+            color: white;
+            box-shadow: none;
+        }
+
+        .btn-submit {
+            background-color: #38bdf8;
+            border: none;
+            color: #031427;
+            font-weight: 700;
+            border-radius: 6px;
+            padding: 8px 20px;
+            transition: 0.2s;
+        }
+
+        .btn-submit:hover {
+            background-color: #0ea5e9;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3 col-lg-2 sidebar d-flex flex-column px-0 position-fixed" style="width: 18%;">
+                <div class="d-flex align-items-center gap-2 px-4 mb-4">
+                    <div class="bg-primary text-white rounded p-1" style="line-height: 1;">🏛️</div>
+                    <div>
+                        <div class="logo-text">Smart City</div>
+                        <div style="font-size: 0.65rem; color: #5a7b9a; letter-spacing: 1px;">PORTAL</div>
+                    </div>
+                </div>
+
+                <div class="section-title">AKIMAT</div>
+                <a class="nav-link active" id="tab-decision" onclick="switchTab('decision')">📋 Decision Center</a>
+
+                <a class="nav-link d-flex justify-content-between align-items-center" id="tab-urgent"
+                    onclick="switchTab('urgent')">
+                    <span>⚡ Urgent Issues</span>
+                    {% if stats.urgent > 0 %}<span class="badge bg-danger rounded-pill">{{ stats.urgent }}</span>{%
+                    endif %}
+                </a>
+
+                <a class="nav-link" id="tab-report" onclick="switchTab('report')">📊 City Report</a>
+                <a class="nav-link" id="tab-staff" onclick="switchTab('staff')">👥 Staff Management</a>
+
+                <div class="mt-auto p-3">
+                    <div class="dashboard-card p-3 d-flex align-items-center gap-3 mb-2"
+                        style="background-color: #092442;">
+                        <div class="rounded-circle bg-primary text-white d-flex justify-content-center align-items-center"
+                            style="width: 35px; height: 35px; font-weight: bold;">
+                            {{ username[0]|upper }}
+                        </div>
+                        <div>
+                            <div class="fw-bold" style="font-size: 0.9rem; color: white;">{{ username }}</div>
+                            <div style="font-size: 0.75rem; color: #8aacc8;">Akim / Official</div>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('sign_out') }}" class="nav-link text-danger text-center"><small>🚪
+                            Logout</small></a>
+                </div>
+            </div>
+
+            <div class="col-md-9 col-lg-10 offset-md-3 offset-lg-2 p-4" style="margin-left: 18%; width: 82%;">
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm"
+                    style="background-color: #0f3d6a; color: white; border: 1px solid #298ebd;" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+
+                <div id="section-decision">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h4 class="mb-0 fw-bold">Akim Decision Center</h4>
+                            <p style="color: #8aacc8; font-size: 0.85rem;">Approved issues awaiting official decision
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <div class="kpi-card h-100">
+                                <div class="d-flex justify-content-between">
+                                    <div class="kpi-num">{{ stats.awaiting }}</div>
+                                    <div style="font-size: 1.5rem;">📋</div>
+                                </div>
+                                <div class="kpi-label">Awaiting Decision</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="kpi-card h-100">
+                                <div class="d-flex justify-content-between">
+                                    <div class="kpi-num red">{{ stats.urgent }}</div>
+                                    <div style="font-size: 1.5rem;">⚡</div>
+                                </div>
+                                <div class="kpi-label">High Urgency</div>
+                                {% if stats.urgent > 0 %}<small style="color: #ef4444; font-size: 0.7rem;">Immediate
+                                    action</small>{% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="kpi-card h-100">
+                                <div class="d-flex justify-content-between">
+                                    <div class="kpi-num green">{{ stats.resolved }}</div>
+                                    <div style="font-size: 1.5rem;">🏗️</div>
+                                </div>
+                                <div class="kpi-label">Resolved This Year</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="kpi-card h-100">
+                                <div class="d-flex justify-content-between">
+                                    <div class="kpi-num">4.2</div>
+                                    <div style="font-size: 1.5rem;">⏱️</div>
+                                </div>
+                                <div class="kpi-label">Avg. Resolution Days</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-card p-0">
+                        <div class="d-flex justify-content-between align-items-center px-4 py-3"
+                            style="border-bottom: 1px solid #143557; background-color: #092c52;">
+                            <h6 class="mb-0 fw-bold">Approved Issues — Awaiting Akim Decision</h6>
+                            <span style="font-size: 0.75rem; color: #5a7b9a;">Moderator-approved • sorted by
+                                urgency</span>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-borderless mb-0">
+                                <tbody>
+                                    {% for row in complaints %}
+                                    <tr>
+                                        <td class="px-4 text-center" style="width: 100px;">
+                                            <img src="/static/uploads/{{ row['photo_filename'] }}" width="80"
+                                                height="80" class="rounded border border-secondary shadow-sm"
+                                                style="object-fit: cover;">
+                                            <div class="mt-2 fw-bold" style="font-size: 0.75rem; color: #5a7b9a;">ID:
+                                                #{{ row['id'] }}</div>
+                                        </td>
+
+                                        <td style="white-space: normal; padding-right: 20px;">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <span class="info-label">📍 Location</span>
+                                                        <div
+                                                            style="font-size: 0.95rem; font-weight: 600; color: #e2e8f0;">
+                                                            {{ row['location'] }}</div>
+                                                    </div>
+                                                    <div>
+                                                        <span class="info-label">👤 Issue Details</span>
+                                                        <div style="font-size: 0.85rem; color: #8aacc8;">{{
+                                                            row['description'] }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="ai-analysis-box m-0 h-100">
+                                                        <div class="ai-analysis-header"><span>🤖</span> AI Summary</div>
+                                                        <div
+                                                            style="font-size: 0.85rem; color: #e2e8f0; line-height: 1.6;">
+                                                            {{ row['ai_suggestion'] }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        <td class="text-end px-4 align-middle" style="width: 320px;">
+                                            <form action="{{ url_for('apply_akim_updates', report_id=row['id']) }}"
+                                                method="POST">
+                                                <div class="mb-2">
+                                                    <span class="info-label text-start">Urgency Level</span>
+                                                    <select name="urgency" class="form-select mb-2">
+                                                        <option value="Unassigned" {% if
+                                                            row['akim_urgency']=='Unassigned' %}selected{% endif %}>-
+                                                            Select Urgency -</option>
+                                                        <option value="Low" {% if row['akim_urgency']=='Low'
+                                                            %}selected{% endif %}>🟢 Low Priority</option>
+                                                        <option value="Medium" {% if row['akim_urgency']=='Medium'
+                                                            %}selected{% endif %}>🟡 Medium Priority</option>
+                                                        <option value="High" {% if row['akim_urgency']=='High'
+                                                            %}selected{% endif %}>🔴 High Priority / Urgent</option>
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <span class="info-label text-start">Official Decision</span>
+                                                    <select name="decision" class="form-select">
+                                                        <option value="Waiting for Akimat" {% if
+                                                            row['akim_decision']=='Waiting for Akimat' %}selected{%
+                                                            endif %}>⏳ Waiting for review...</option>
+                                                        <option value="Will Fix" {% if row['akim_decision']=='Will Fix'
+                                                            %}selected{% endif %}>🛠️ Assign to Contractors (Will Fix)
+                                                        </option>
+                                                        <option value="Resolved" {% if row['akim_decision']=='Resolved'
+                                                            %}selected{% endif %}>✅ Mark as Resolved</option>
+                                                        <option value="Won't Fix" {% if
+                                                            row['akim_decision']=="Won't Fix" %}selected{% endif %}>🚫
+                                                            Reject (Won't Fix)</option>
+                                                    </select>
+                                                </div>
+                                                <button type="submit" class="btn btn-submit w-100">Save Decision
+                                                    ✓</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="3" class="text-center py-5" style="color: #8aacc8;">No approved
+                                            issues waiting for Akim.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section-urgent" class="d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h4 class="mb-0 fw-bold">Urgent Issues</h4>
+                            <p style="color: #8aacc8; font-size: 0.85rem;">High priority infrastructure problems</p>
+                        </div>
+                    </div>
+                    <div class="dashboard-card text-center py-5">
+                        <h5 style="color: #ef4444;">{{ stats.urgent }} Issues Require Immediate Attention</h5>
+                        <p style="color: #8aacc8;">Filter applied: Urgency = High</p>
+                    </div>
+                </div>
+
+                <div id="section-report" class="d-none">
+                    <h4 class="mb-0 fw-bold mb-4">City Report</h4>
+                    <div class="dashboard-card text-center py-5">
+                        <h5 style="color: #8aacc8;">Global City Analytics will be generated here.</h5>
+                    </div>
+                </div>
+
+                <div id="section-staff" class="d-none">
+                    <h4 class="mb-0 fw-bold mb-4">Staff Management</h4>
+                    <div class="dashboard-card text-center py-5">
+                        <h5 style="color: #8aacc8;">HR and Moderator management portal.</h5>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            const sections = ['decision', 'urgent', 'report', 'staff'];
+            sections.forEach(sec => {
+                document.getElementById('section-' + sec).classList.add('d-none');
+                document.getElementById('tab-' + sec).classList.remove('active');
+            });
+            document.getElementById('section-' + tabName).classList.remove('d-none');
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+    </script>
+
+</body>
+
+</html>

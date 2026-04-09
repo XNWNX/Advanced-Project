@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moderator Dashboard - Smart City</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Цветовая палитра */
+        body {
+            background-color: #061d36;
+            color: #e2e8f0;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Боковое меню */
+        .sidebar {
+            background-color: #031427;
+            min-height: 100vh;
+            border-right: 1px solid #143557;
+            padding-top: 20px;
+        }
+
+        .logo-text {
+            font-weight: 800;
+            font-size: 1.2rem;
+            color: #fff;
+        }
+
+        .nav-link {
+            color: #8aacc8;
+            border-radius: 8px;
+            margin: 4px 15px;
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background-color: #0f3d6a;
+            color: white;
+            font-weight: 600;
+        }
+
+        .section-title {
+            font-size: 0.65rem;
+            color: #5a7b9a;
+            margin: 15px 0 5px 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Карточки KPI */
+        .dashboard-card {
+            background-color: #0b2e53;
+            border-radius: 12px;
+            border: 1px solid #143557;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .kpi-card {
+            background-color: #0b2e53;
+            border-radius: 12px;
+            border: 1px solid #143557;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .kpi-num {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #f59e0b;
+            line-height: 1;
+        }
+
+        .kpi-num.green {
+            color: #10b981;
+        }
+
+        .kpi-num.blue {
+            color: #38bdf8;
+        }
+
+        .kpi-label {
+            font-size: 0.8rem;
+            color: #8aacc8;
+            margin-top: 5px;
+        }
+
+        /* Настройки таблиц */
+        .table {
+            color: #e2e8f0;
+            margin-bottom: 0;
+        }
+
+        .table th {
+            border-bottom: 1px solid #143557;
+            color: #5a7b9a;
+            font-weight: 600;
+            font-size: 0.75rem;
+            background-color: transparent;
+            text-transform: uppercase;
+        }
+
+        .table td {
+            border-bottom: 1px solid #143557;
+            background-color: transparent;
+            vertical-align: top;
+            padding: 20px 10px;
+        }
+
+        /* Кнопки */
+        .btn-approve {
+            background-color: #10b981;
+            border: none;
+            color: #fff;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 8px 15px;
+            transition: 0.2s;
+        }
+
+        .btn-approve:hover {
+            background-color: #059669;
+        }
+
+        .btn-reject {
+            background-color: #ef4444;
+            border: none;
+            color: #fff;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 8px 15px;
+            transition: 0.2s;
+        }
+
+        .btn-reject:hover {
+            background-color: #dc2626;
+        }
+
+        /* --- НОВЫЙ ДИЗАЙН КАРТОЧКИ ЖАЛОБЫ --- */
+        .info-label {
+            font-size: 0.65rem;
+            color: #5a7b9a;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .ai-analysis-box {
+            background-color: rgba(56, 189, 248, 0.05);
+            border-left: 3px solid #38bdf8;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 0 8px 8px 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .ai-analysis-header {
+            color: #38bdf8;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3 col-lg-2 sidebar d-flex flex-column px-0 position-fixed" style="width: 18%;">
+                <div class="d-flex align-items-center gap-2 px-4 mb-4">
+                    <div class="bg-primary text-white rounded p-1" style="line-height: 1;">🛡️</div>
+                    <div>
+                        <div class="logo-text">Smart City</div>
+                        <div style="font-size: 0.65rem; color: #5a7b9a; letter-spacing: 1px;">PORTAL</div>
+                    </div>
+                </div>
+
+                <div class="section-title">MODERATION</div>
+                <a class="nav-link active" id="tab-overview" onclick="switchTab('overview')">🛡️ Overview</a>
+
+                <a class="nav-link d-flex justify-content-between align-items-center" id="tab-queue"
+                    onclick="switchTab('queue')">
+                    <span>🔍 Review Queue</span>
+                    {% if stats.pending > 0 %}<span class="badge bg-danger rounded-pill">{{ stats.pending }}</span>{%
+                    endif %}
+                </a>
+
+                <a class="nav-link" id="tab-approved" onclick="switchTab('approved')">✅ Approved</a>
+                <a class="nav-link" id="tab-rejected" onclick="switchTab('rejected')">❌ Rejected</a>
+
+                <div class="mt-auto p-3">
+                    <div class="dashboard-card p-3 d-flex align-items-center gap-3 mb-2"
+                        style="background-color: #092442;">
+                        <div class="rounded-circle bg-primary text-white d-flex justify-content-center align-items-center"
+                            style="width: 35px; height: 35px; font-weight: bold;">
+                            {{ username[0]|upper }}
+                        </div>
+                        <div>
+                            <div class="fw-bold" style="font-size: 0.9rem; color: white;">{{ username }}</div>
+                            <div style="font-size: 0.75rem; color: #8aacc8;">Moderator</div>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('sign_out') }}" class="nav-link text-danger text-center"><small>🚪
+                            Logout</small></a>
+                </div>
+            </div>
+
+            <div class="col-md-9 col-lg-10 offset-md-3 offset-lg-2 p-4" style="margin-left: 18%; width: 82%;">
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm"
+                    style="background-color: #0f3d6a; color: white; border: 1px solid #298ebd;" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+
+                <div id="section-overview">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h4 class="mb-0 fw-bold">Moderator Dashboard</h4>
+                            <p style="color: #8aacc8; font-size: 0.85rem;">Complaint Review System</p>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="kpi-card h-100">
+                                <div class="d-flex justify-content-between">
+                                    <div class="kpi-num">{{ stats.pending }}</div>
+                                    <div style="font-size: 1.5rem;">🔍</div>
+                                </div>
+                                <div class="kpi-label">Pending Review</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="kpi-card h-100">
+                                <div class="d-flex justify-content-between">
+                                    <div class="kpi-num green">{{ stats.approved }}</div>
+                                    <div style="font-size: 1.5rem;">✅</div>
+                                </div>
+                                <div class="kpi-label">Approved by you</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="kpi-card h-100">
+                                <div class="d-flex justify-content-between">
+                                    <div class="kpi-num blue">91%</div>
+                                    <div style="font-size: 1.5rem;">🤖</div>
+                                </div>
+                                <div class="kpi-label">AI Match Rate</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-card p-0">
+                        <div class="d-flex justify-content-between align-items-center px-4 py-3"
+                            style="border-bottom: 1px solid #143557; background-color: #092c52;">
+                            <h6 class="mb-0 fw-bold">Pending Moderation Queue</h6>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-borderless mb-0">
+                                <tbody>
+                                    {% for row in complaints %}
+                                    {% if row['mod_status'] == 'Pending' %}
+                                    <tr>
+                                        <td class="px-4 text-center" style="width: 100px;">
+                                            <img src="/static/uploads/{{ row['photo_filename'] }}" width="80"
+                                                height="80" class="rounded border border-secondary shadow-sm"
+                                                style="object-fit: cover;">
+                                            <div class="mt-2 fw-bold" style="font-size: 0.75rem; color: #5a7b9a;">ID:
+                                                #{{ row['id'] }}</div>
+                                        </td>
+
+                                        <td style="white-space: normal; padding-right: 30px;">
+                                            <div class="row">
+                                                <div class="col-md-5">
+                                                    <div class="mb-3">
+                                                        <span class="info-label">📍 Location</span>
+                                                        <div
+                                                            style="font-size: 0.95rem; font-weight: 600; color: #e2e8f0;">
+                                                            {{ row['location'] }}</div>
+                                                    </div>
+                                                    <div>
+                                                        <span class="info-label">👤 Citizen Report</span>
+                                                        <div style="font-size: 0.85rem; color: #8aacc8;">{{
+                                                            row['description'] }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-7">
+                                                    <div class="ai-analysis-box m-0 h-100">
+                                                        <div class="ai-analysis-header">
+                                                            <span>🤖</span> AI Analysis Result
+                                                        </div>
+                                                        <div
+                                                            style="font-size: 0.85rem; color: #e2e8f0; line-height: 1.6;">
+                                                            {{ row['ai_suggestion'] }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        <td class="text-end px-4" style="width: 250px;">
+                                            <form action="{{ url_for('submit_mod_action', report_id=row['id']) }}"
+                                                method="POST" class="d-flex gap-2 justify-content-end m-0">
+                                                <button type="submit" name="mod_action" value="Approved"
+                                                    class="btn btn-approve px-4 py-2">✓ Approve</button>
+                                                <button type="submit" name="mod_action" value="Rejected"
+                                                    class="btn btn-reject px-4 py-2">✕ Reject</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% if stats.pending == 0 %}
+                                    <tr>
+                                        <td colspan="3" class="text-center py-5" style="color: #8aacc8;">Queue is empty.
+                                            Great job!</td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section-queue" class="d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h4 class="mb-0 fw-bold">Review Queue</h4>
+                            <p style="color: #8aacc8; font-size: 0.85rem;">{{ stats.pending }} complaints pending
+                                moderation</p>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-card p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <tbody>
+                                    {% for row in complaints %}
+                                    {% if row['mod_status'] == 'Pending' %}
+                                    <tr>
+                                        <td class="px-4 text-center" style="width: 100px;">
+                                            <img src="/static/uploads/{{ row['photo_filename'] }}" width="80"
+                                                height="80" class="rounded border border-secondary shadow-sm"
+                                                style="object-fit: cover;">
+                                            <div class="mt-2 fw-bold" style="font-size: 0.75rem; color: #5a7b9a;">ID:
+                                                #{{ row['id'] }}</div>
+                                        </td>
+                                        <td style="white-space: normal; padding-right: 30px;">
+                                            <div class="row">
+                                                <div class="col-md-5">
+                                                    <div class="mb-3">
+                                                        <span class="info-label">📍 Location</span>
+                                                        <div
+                                                            style="font-size: 0.95rem; font-weight: 600; color: #e2e8f0;">
+                                                            {{ row['location'] }}</div>
+                                                    </div>
+                                                    <div>
+                                                        <span class="info-label">👤 Citizen Report</span>
+                                                        <div style="font-size: 0.85rem; color: #8aacc8;">{{
+                                                            row['description'] }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-7">
+                                                    <div class="ai-analysis-box m-0 h-100">
+                                                        <div class="ai-analysis-header"><span>🤖</span> AI Analysis
+                                                            Result</div>
+                                                        <div
+                                                            style="font-size: 0.85rem; color: #e2e8f0; line-height: 1.6;">
+                                                            {{ row['ai_suggestion'] }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-end px-4" style="width: 250px;">
+                                            <form action="/mod_action/{{ row['id'] }}" method="POST"
+                                                class="d-flex gap-2 justify-content-end m-0">
+                                                <button type="submit" name="mod_action" value="Approved"
+                                                    class="btn btn-approve px-4 py-2">✓ Approve</button>
+                                                <button type="submit" name="mod_action" value="Rejected"
+                                                    class="btn btn-reject px-4 py-2">✕ Reject</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% if stats.pending == 0 %}
+                                    <tr>
+                                        <td colspan="3" class="text-center py-5" style="color: #8aacc8;">All caught up!
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section-approved" class="d-none">
+                    <h4 class="mb-0 fw-bold">Approved Issues</h4>
+                    <div class="dashboard-card p-0 mt-3">
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <tbody>
+                                    {% for row in complaints %}
+                                    {% if row['mod_status'] == 'Approved' %}
+                                    <tr>
+                                        <td class="px-4 text-center" style="width: 100px;">
+                                            <img src="/static/uploads/{{ row['photo_filename'] }}" width="80"
+                                                height="80" class="rounded border border-secondary shadow-sm"
+                                                style="object-fit: cover;">
+                                            <div class="mt-2 fw-bold" style="font-size: 0.75rem; color: #5a7b9a;">ID:
+                                                #{{ row['id'] }}</div>
+                                        </td>
+                                        <td style="white-space: normal; padding-right: 30px;">
+                                            <div class="row">
+                                                <div class="col-md-5">
+                                                    <div class="mb-3">
+                                                        <span class="info-label">📍 Location</span>
+                                                        <div
+                                                            style="font-size: 0.95rem; font-weight: 600; color: #e2e8f0;">
+                                                            {{ row['location'] }}</div>
+                                                    </div>
+                                                    <div>
+                                                        <span class="info-label">👤 Citizen Report</span>
+                                                        <div style="font-size: 0.85rem; color: #8aacc8;">{{
+                                                            row['description'] }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-7">
+                                                    <div class="ai-analysis-box m-0 h-100">
+                                                        <div class="ai-analysis-header"><span>🤖</span> AI Analysis
+                                                            Result</div>
+                                                        <div
+                                                            style="font-size: 0.85rem; color: #e2e8f0; line-height: 1.6;">
+                                                            {{ row['ai_suggestion'] }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-end px-4" style="width: 200px;">
+                                            <span class="info-label text-end mb-2">Akimat Status</span>
+                                            {% if row['akim_decision'] == 'Waiting for Akimat' %}
+                                            <span class="badge bg-secondary px-3 py-2"
+                                                style="font-size: 0.8rem;">Waiting</span>
+                                            {% else %}
+                                            <span class="badge bg-success px-3 py-2" style="font-size: 0.8rem;">{{
+                                                row['akim_decision'] }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section-rejected" class="d-none">
+                    <h4 class="mb-0 fw-bold">Rejected Issues</h4>
+                    <div class="dashboard-card p-0 mt-3">
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <tbody>
+                                    {% for row in complaints %}
+                                    {% if row['mod_status'] == 'Rejected' %}
+                                    <tr>
+                                        <td class="px-4 text-center" style="width: 100px;">
+                                            <img src="/static/uploads/{{ row['photo_filename'] }}" width="80"
+                                                height="80" class="rounded border border-secondary shadow-sm"
+                                                style="object-fit: cover;">
+                                            <div class="mt-2 fw-bold" style="font-size: 0.75rem; color: #5a7b9a;">ID:
+                                                #{{ row['id'] }}</div>
+                                        </td>
+                                        <td style="white-space: normal; padding-right: 30px;">
+                                            <div class="row">
+                                                <div class="col-md-5">
+                                                    <div class="mb-3">
+                                                        <span class="info-label">📍 Location</span>
+                                                        <div
+                                                            style="font-size: 0.95rem; font-weight: 600; color: #e2e8f0;">
+                                                            {{ row['location'] }}</div>
+                                                    </div>
+                                                    <div>
+                                                        <span class="info-label">👤 Citizen Report</span>
+                                                        <div style="font-size: 0.85rem; color: #8aacc8;">{{
+                                                            row['description'] }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-7">
+                                                    <div class="ai-analysis-box m-0 h-100">
+                                                        <div class="ai-analysis-header"><span>🤖</span> AI Analysis
+                                                            Result</div>
+                                                        <div
+                                                            style="font-size: 0.85rem; color: #e2e8f0; line-height: 1.6;">
+                                                            {{ row['ai_suggestion'] }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-end px-4" style="width: 200px;">
+                                            <span class="info-label text-end mb-2">Status</span>
+                                            <span class="badge bg-danger px-3 py-2"
+                                                style="font-size: 0.8rem;">Rejected</span>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            const sections = ['overview', 'queue', 'approved', 'rejected'];
+            sections.forEach(sec => {
+                document.getElementById('section-' + sec).classList.add('d-none');
+                document.getElementById('tab-' + sec).classList.remove('active');
+            });
+            document.getElementById('section-' + tabName).classList.remove('d-none');
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+    </script>
+
+</body>
+
+</html>
