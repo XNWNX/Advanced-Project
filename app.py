@@ -1252,6 +1252,9 @@ def akim_action(id):
     flash(f"Akimat decision saved: {decision}.", "success")
     return redirect(url_for('akim_dashboard', tab=active_tab, report_query=report_query))
 
-
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Railway сам передает порт через переменные окружения.
+    # Если порта нет (запуск на компе), используем 5000.
+    port = int(os.environ.get("PORT", 5000))
+    # host='0.0.0.0' обязателен для облака, чтобы сервер был доступен снаружи!
+    app.run(host='0.0.0.0', port=port, debug=False)
