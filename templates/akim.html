@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Akim Decision Center - Smart City</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Подключаем Карты и Графики -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         body { background-color: #061d36; color: #e2e8f0; font-family: 'Segoe UI', Tahoma, sans-serif; overflow-x: hidden; }
         .sidebar { background-color: #031427; min-height: 100vh; border-right: 1px solid #143557; padding-top: 20px; }
@@ -19,15 +25,7 @@
         .kpi-num.green { color: #10b981; }
         .kpi-num.orange { color: #f59e0b; }
         .kpi-label { font-size: 0.8rem; color: #8aacc8; margin-top: 5px; }
-        .decision-card {
-            background: #0d345d;
-            border: 1px solid #143557;
-            border-radius: 14px;
-            padding: 16px;
-            margin-bottom: 16px;
-            cursor: pointer;
-            transition: 0.2s ease;
-        }
+        .decision-card { background: #0d345d; border: 1px solid #143557; border-radius: 14px; padding: 16px; margin-bottom: 16px; cursor: pointer; transition: 0.2s ease; }
         .decision-card:hover { border-color: #2b6ea4; background: #103a63; }
         .decision-meta { color: #8aacc8; font-size: 0.75rem; margin-top: 8px; }
         .status-badge { border-radius: 999px; padding: 8px 14px; font-size: 0.78rem; font-weight: 700; display: inline-block; }
@@ -57,6 +55,7 @@
         .details-panel { background: #0d345d; border: 1px solid #143557; border-radius: 14px; padding: 16px; height: 100%; }
         .details-section-title { font-size: 0.72rem; letter-spacing: 1px; text-transform: uppercase; color: #8aacc8; margin-bottom: 8px; font-weight: 700; }
         .details-text { color: #f8fbff; line-height: 1.6; }
+        #akimMap { border-radius: 8px; z-index: 1; }
     </style>
 </head>
 <body>
@@ -95,6 +94,7 @@
                 <span>⚡ Urgent Issues</span>
                 {% if stats.urgent > 0 %}<span class="badge bg-danger rounded-pill">{{ stats.urgent }}</span>{% endif %}
             </a>
+            <a class="nav-link" id="tab-map" onclick="switchTab('map')">🗺️ City Map</a>
             <a class="nav-link" id="tab-report" onclick="switchTab('report')">📊 City Report</a>
             <a class="nav-link" id="tab-staff" onclick="switchTab('staff')">👥 Staff Notes</a>
 
@@ -163,7 +163,7 @@
                 </div>
             </div>
 
-            <!-- Вкладки Urgent, Report, Staff -->
+            <!-- Вкладки Urgent, Map, Report, Staff -->
             <div id="section-urgent" class="d-none">
                 <h4 class="mb-0 fw-bold">Urgent Issues</h4>
                 <div class="dashboard-card mt-3">
@@ -179,32 +179,71 @@
                             <div class="col-md-3 text-end"><div class="status-badge status-high">High urgency</div></div>
                         </div>
                     </div>
+                    {% else %}
+                    <p style="color: #8aacc8; margin-bottom: 0;">No high urgency issues right now.</p>
                     {% endfor %}
+                </div>
+            </div>
+
+            <div id="section-map" class="d-none">
+                <h4 class="mb-0 fw-bold">City Map</h4>
+                <p style="color: #8aacc8; font-size: 0.85rem;" class="mb-4">Geographical overview of all approved issues</p>
+                <div class="dashboard-card p-3">
+                    <div id="akimMap" style="height: 500px;"></div>
+                    <div class="mt-3 text-center" style="font-size: 0.8rem; color: #8aacc8;">
+                        <span style="color: #ef4444;">🔴 High Urgency</span> &nbsp;&nbsp;
+                        <span style="color: #f59e0b;">🟡 Medium / Low</span> &nbsp;&nbsp;
+                        <span style="color: #10b981;">🟢 Resolved</span>
+                    </div>
                 </div>
             </div>
 
             <div id="section-report" class="d-none">
                 <h4 class="mb-0 fw-bold">City Report</h4>
-                <div class="dashboard-card mt-4">
-                    <p style="color: #8aacc8; margin-bottom: 0;">Operational summary will be displayed here.</p>
+                <p style="color: #8aacc8; font-size: 0.85rem;" class="mb-4">Operational summary and metrics for approved issues</p>
+
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="dashboard-card">
+                            <h6 class="mb-4" style="font-size: 0.85rem;">Issue Urgency Breakdown</h6>
+                            <div style="height: 250px;"><canvas id="urgencyChart"></canvas></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="dashboard-card">
+                            <h6 class="mb-4" style="font-size: 0.85rem;">Resolution Status</h6>
+                            <div style="height: 250px;"><canvas id="statusChart"></canvas></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div id="section-staff" class="d-none">
                 <h4 class="mb-0 fw-bold">Staff Notes</h4>
-                <div class="row g-3 mt-2">
-                    <div class="col-lg-12">
-                        <div class="dashboard-card">
-                            <div class="info-label mb-3">Recent Internal Notes</div>
-                            {% for item in recent_notes %}
-                            <div class="{% if not loop.first %}pt-3 mt-3 border-top border-secondary{% endif %}">
-                                <div style="font-size: 0.92rem; font-weight: 700; color: #ffffff;">{{ item['location'] }} <span style="color: #8aacc8;">#{{ item['complaint_id'] }}</span></div>
-                                <div style="color: #8aacc8; font-size: 0.78rem;">{{ item['author_username'] }} ({{ item['author_role'] }})</div>
-                                <div style="color: #bfd7ee; margin-top: 5px;">{{ item['note_text'] }}</div>
+                <p style="color: #8aacc8; font-size: 0.85rem;" class="mb-4">Click on any note to instantly open the corresponding report</p>
+                <div class="dashboard-card">
+                    <div class="info-label mb-3">Recent Internal Notes</div>
+                    {% for item in recent_notes %}
+                    <!-- Делаем заметку кликабельной через класс decision-card и функцию openReportDetails -->
+                    <div class="decision-card" onclick="openReportDetails({{ item['complaint_id'] }})" style="margin-bottom: 12px; padding: 14px 18px;">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">
+                                    {{ item['location'] }} <span style="color: #8aacc8; font-weight: 500; font-size: 0.85rem;">#{{ item['complaint_id'] }}</span>
+                                </div>
+                                <div style="color: #8aacc8; font-size: 0.78rem; margin-top: 2px;">
+                                    {{ item['created_at'] }} • {{ item['author_username'] }} ({{ item['author_role'] }})
+                                </div>
                             </div>
-                            {% endfor %}
+                            <span style="color: #38bdf8; font-size: 0.82rem; font-weight: 600;">Review →</span>
+                        </div>
+                        <div style="color: #bfd7ee; line-height: 1.5; font-size: 0.9rem;">
+                            {{ item['note_text'] }}
                         </div>
                     </div>
+                    {% else %}
+                    <p style="color: #8aacc8; margin-bottom: 0;">No internal notes yet.</p>
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -353,20 +392,144 @@
         if (modal) modal.remove();
     }
 
+    // MAP AND CHARTS INITIALIZATION VARIABLES
+    let chartsRendered = false;
+    let mapInitialized = false;
+    let akimMap;
+
     function switchTab(tabName) {
-        const sections = ['decision', 'urgent', 'report', 'staff'];
+        const sections = ['decision', 'urgent', 'map', 'report', 'staff'];
         sections.forEach(sec => {
-            document.getElementById('section-' + sec).classList.add('d-none');
-            document.getElementById('tab-' + sec).classList.remove('active');
+            const el = document.getElementById('section-' + sec);
+            if(el) el.classList.add('d-none');
+            const tab = document.getElementById('tab-' + sec);
+            if(tab) tab.classList.remove('active');
         });
-        document.getElementById('section-' + tabName).classList.remove('d-none');
-        document.getElementById('tab-' + tabName).classList.add('active');
+
+        const activeSection = document.getElementById('section-' + tabName);
+        if(activeSection) activeSection.classList.remove('d-none');
+
+        const activeTab = document.getElementById('tab-' + tabName);
+        if(activeTab) activeTab.classList.add('active');
+
         document.querySelectorAll('input[name="active_tab"]').forEach(input => {
             input.value = tabName;
         });
+
+        // Trigger map resizing when tab is opened
+        if (tabName === 'map') {
+            if (!mapInitialized) {
+                initAkimMap();
+                mapInitialized = true;
+            } else {
+                setTimeout(() => { akimMap.invalidateSize(); }, 100);
+            }
+        }
+
+        // Render charts when report tab is opened
+        if (tabName === 'report' && !chartsRendered) {
+            renderAkimCharts();
+            chartsRendered = true;
+        }
     }
 
-    // Показывает/Скрывает форму возврата жителю
+    // INIT LEAFLET MAP
+    function initAkimMap() {
+        const almatyBounds = L.latLngBounds(L.latLng(43.05, 76.70), L.latLng(43.40, 77.15));
+        akimMap = L.map('akimMap', { maxBounds: almatyBounds, minZoom: 11 }).setView([43.2389, 76.8897], 12);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(akimMap);
+
+        const complaintsData = {{ complaints | tojson | safe }};
+
+        complaintsData.forEach(c => {
+            if (c.lat && c.lng) {
+                let circleColor = '#94a3b8'; // Default
+
+                if (c.akim_decision === 'Resolved') {
+                    circleColor = '#10b981'; // Green
+                } else if (c.akim_urgency === 'High') {
+                    circleColor = '#ef4444'; // Red
+                } else if (c.akim_urgency === 'Medium' || c.akim_urgency === 'Low') {
+                    circleColor = '#f59e0b'; // Orange
+                }
+
+                L.circle([c.lat, c.lng], {
+                    color: circleColor,
+                    fillColor: circleColor,
+                    fillOpacity: 0.6,
+                    radius: 70
+                }).addTo(akimMap).bindPopup(`<b>${c.location}</b><br><small>Urgency: ${c.akim_urgency}<br>Status: ${c.akim_decision}</small>`);
+            }
+        });
+    }
+
+    // INIT CHART.JS CHARTS
+    function renderAkimCharts() {
+        const complaintsData = {{ complaints | tojson | safe }};
+
+        let uHigh=0, uMed=0, uLow=0, uUnassigned=0;
+        let sWaiting=0, sAccepted=0, sInProgress=0, sResolved=0;
+
+        complaintsData.forEach(c => {
+            // Urgency
+            if (c.akim_urgency === 'High') uHigh++;
+            else if (c.akim_urgency === 'Medium') uMed++;
+            else if (c.akim_urgency === 'Low') uLow++;
+            else uUnassigned++;
+
+            // Status
+            if (c.akim_decision === 'Resolved') sResolved++;
+            else if (c.akim_decision === 'In Progress') sInProgress++;
+            else if (c.akim_decision === 'Accepted' || c.akim_decision === 'Will Fix') sAccepted++;
+            else sWaiting++;
+        });
+
+        Chart.defaults.color = '#8aacc8';
+
+        new Chart(document.getElementById('urgencyChart'), {
+            type: 'bar',
+            data: {
+                labels: ['High', 'Medium', 'Low', 'Unassigned'],
+                datasets: [{
+                    label: 'Reports',
+                    data: [uHigh, uMed, uLow, uUnassigned],
+                    backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#94a3b8'],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#143557' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('statusChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Waiting', 'Accepted', 'In Progress', 'Resolved'],
+                datasets: [{
+                    data: [sWaiting, sAccepted, sInProgress, sResolved],
+                    backgroundColor: ['#f59e0b', '#38bdf8', '#8b5cf6', '#10b981'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+
     function toggleAkimRejectForm(id) {
         const formContainer = document.getElementById(`akim-reject-container-${id}`);
         if (formContainer.classList.contains('d-none')) {
