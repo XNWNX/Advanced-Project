@@ -1253,8 +1253,9 @@ def akim_action(id):
     return redirect(url_for('akim_dashboard', tab=active_tab, report_query=report_query))
 
 if __name__ == '__main__':
-    # Railway сам передает порт через переменные окружения.
-    # Если порта нет (запуск на компе), используем 5000.
+    # Импортируем os, если вдруг забыли (он у тебя уже есть вверху, но на всякий случай)
+    import os
+    # Railway сам выдает порт. Если мы на компе, будет 5000
     port = int(os.environ.get("PORT", 5000))
-    # host='0.0.0.0' обязателен для облака, чтобы сервер был доступен снаружи!
+    # host='0.0.0.0' ОБЯЗАТЕЛЕН для облака! Без него сайт не выйдет в интернет
     app.run(host='0.0.0.0', port=port, debug=False)
