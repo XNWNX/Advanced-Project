@@ -1,0 +1,6 @@
+Flask
+google-genai
+Pillow
+Werkzeug
+python-dotenv
+boto3
