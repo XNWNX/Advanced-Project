@@ -4,3 +4,4 @@ Pillow
 Werkzeug
 python-dotenv
 boto3
+gunicorn
