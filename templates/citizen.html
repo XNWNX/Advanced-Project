@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart City - Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body { background-color: #061d36; color: #e2e8f0; font-family: 'Segoe UI', Tahoma, sans-serif; overflow-x: hidden; }
+
+        .sidebar { background-color: #031427; min-height: 100vh; border-right: 1px solid #143557; padding-top: 20px; }
+        .logo-text { font-weight: 800; font-size: 1.2rem; color: #fff; }
+        .nav-link { color: #8aacc8; border-radius: 8px; margin: 4px 15px; padding: 10px 15px; cursor: pointer; transition: 0.3s; font-size: 0.9rem; }
+        .nav-link:hover, .nav-link.active { background-color: #0f3d6a; color: white; font-weight: 600; }
+        .section-title { font-size: 0.65rem; color: #5a7b9a; margin: 15px 0 5px 20px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .dashboard-card { background-color: #0b2e53; border-radius: 12px; border: 1px solid #143557; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+        .kpi-card { background-color: #0b2e53; border-radius: 12px; border: 1px solid #143557; padding: 20px; display: flex; flex-direction: column; justify-content: center; }
+        .kpi-num { font-size: 2rem; font-weight: 700; color: #38bdf8; line-height: 1; }
+        .kpi-label { font-size: 0.8rem; color: #8aacc8; margin-top: 5px; }
+
+        .form-control { background-color: #061d36; border: 1px solid #143557; color: #f8fbff; border-radius: 8px; }
+        .form-control:focus { background-color: #092442; border-color: #38bdf8; color: #f8fbff; box-shadow: none; }
+        .form-control::placeholder { color: #a9c4dc; opacity: 1; }
+        .form-control::-webkit-input-placeholder { color: #a9c4dc; }
+        .form-control::-moz-placeholder { color: #a9c4dc; opacity: 1; }
+        textarea.form-control, input.form-control { caret-color: #f8fbff; }
+        .form-label { color: #d7e9f8; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+        .btn-primary { background-color: #298ebd; border: none; font-weight: 600; border-radius: 8px; }
+        .btn-primary:hover { background-color: #1e749e; }
+        .btn-map-search {
+            background-color: transparent;
+            border: 1px solid #4c87b3;
+            color: #d7e9f8;
+            border-radius: 8px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .btn-map-search:hover {
+            background-color: #103a63;
+            color: white;
+        }
+        .form-helper {
+            color: #bfd7ee;
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+        .location-feedback {
+            min-height: 18px;
+            color: #9fd4f3;
+            font-size: 0.78rem;
+            margin-top: 8px;
+        }
+
+        .table { color: #e2e8f0; margin-bottom: 0; }
+        .table th { border-bottom: 1px solid #143557; color: #5a7b9a; font-weight: 500; font-size: 0.8rem; background-color: transparent; }
+        .table td { border-bottom: 1px solid #143557; padding: 15px 10px; background-color: transparent; }
+
+        .badge-pending { background-color: transparent; border: 1px solid #f59e0b; color: #f59e0b; border-radius: 15px; }
+        .badge-approved { background-color: transparent; border: 1px solid #10b981; color: #10b981; border-radius: 15px; }
+        .badge-rejected { background-color: transparent; border: 1px solid #ef4444; color: #ef4444; border-radius: 15px; }
+        .badge-action { background-color: transparent; border: 1px solid #38bdf8; color: #38bdf8; border-radius: 15px; }
+        .history-filter {
+            color: #8aacc8;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 5px;
+            transition: 0.2s ease;
+        }
+        .history-filter.active {
+            color: #38bdf8;
+            font-weight: 600;
+            border-bottom-color: #38bdf8;
+        }
+        .history-empty {
+            color: #8aacc8;
+            text-align: center;
+            padding: 32px 16px;
+        }
+        .report-location {
+            color: #ffffff;
+        }
+        .report-row {
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .report-row:hover {
+            background-color: rgba(56, 189, 248, 0.06);
+        }
+        .report-meta {
+            color: #8aacc8;
+            font-size: 0.74rem;
+            margin-top: 4px;
+        }
+        .details-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 10, 20, 0.72);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            z-index: 2100;
+        }
+        .details-card {
+            width: min(920px, 100%);
+            max-height: 88vh;
+            overflow-y: auto;
+            background: #0b2e53;
+            border: 1px solid #143557;
+            border-radius: 18px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.38);
+        }
+        .details-header {
+            padding: 22px 24px 14px;
+            border-bottom: 1px solid #143557;
+        }
+        .details-subtitle {
+            color: #8aacc8;
+            font-size: 0.82rem;
+            margin-top: 6px;
+        }
+        .details-body {
+            padding: 24px;
+        }
+        .details-image {
+            width: 100%;
+            border-radius: 14px;
+            border: 1px solid #143557;
+            object-fit: cover;
+            max-height: 320px;
+        }
+        .details-section-title {
+            font-size: 0.72rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #8aacc8;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+        .details-text {
+            color: #f8fbff;
+            line-height: 1.6;
+        }
+        .details-panel {
+            background: #0d345d;
+            border: 1px solid #143557;
+            border-radius: 14px;
+            padding: 16px;
+            height: 100%;
+        }
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .timeline-step {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            opacity: 0.5;
+        }
+        .timeline-step.active {
+            opacity: 1;
+        }
+        .timeline-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #35516a;
+            border: 2px solid #35516a;
+            margin-top: 3px;
+            flex-shrink: 0;
+        }
+        .timeline-step.active .timeline-dot.pending { background: #f59e0b; border-color: #f59e0b; }
+        .timeline-step.active .timeline-dot.approved { background: #10b981; border-color: #10b981; }
+        .timeline-step.active .timeline-dot.rejected { background: #ef4444; border-color: #ef4444; }
+        .timeline-step.active .timeline-dot.resolved { background: #38bdf8; border-color: #38bdf8; }
+        .timeline-title {
+            font-weight: 700;
+            color: #ffffff;
+            font-size: 0.9rem;
+        }
+        .timeline-text {
+            color: #8aacc8;
+            font-size: 0.78rem;
+            margin-top: 2px;
+            line-height: 1.4;
+        }
+
+        .flash-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 10, 20, 0.68);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            z-index: 2000;
+        }
+        .flash-modal-card {
+            width: min(560px, 100%);
+            background: linear-gradient(180deg, #f8fbff 0%, #eef5fb 100%);
+            color: #16324a;
+            border-radius: 18px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(17, 54, 84, 0.12);
+            overflow: hidden;
+        }
+        .flash-modal-header {
+            padding: 18px 22px 8px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.3px;
+        }
+        .flash-modal-header.warning { color: #b45309; }
+        .flash-modal-header.success { color: #0f766e; }
+        .flash-modal-header.danger { color: #b91c1c; }
+        .flash-modal-body { padding: 0 22px 22px; }
+        .flash-modal-title { font-size: 1.35rem; font-weight: 800; margin-bottom: 10px; }
+        .flash-modal-text { color: #35516a; font-size: 0.98rem; line-height: 1.6; margin-bottom: 0; }
+        .flash-modal-actions { padding: 0 22px 22px; display: flex; justify-content: flex-end; }
+        .flash-modal-close {
+            background: #0f3d6a;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 18px;
+            font-weight: 700;
+        }
+        .flash-modal-close:hover { background: #0b2e53; }
+
+        #map, #cityMap { border-radius: 10px; border: 1px solid #143557; z-index: 1; }
+        #barChart { min-height: 280px; }
+    </style>
+</head>
+<body>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% set category, message = messages[-1] %}
+        <div class="flash-modal-backdrop" id="flashModalBackdrop" onclick="closeFlashModal(event)">
+            <div class="flash-modal-card" role="dialog" aria-modal="true" aria-labelledby="flashModalTitle">
+                <div class="flash-modal-header {{ category }}">{{ 'Duplicate Report' if category == 'warning' else 'System Notification' }}</div>
+                <div class="flash-modal-body">
+                    <div class="flash-modal-title" id="flashModalTitle">
+                        {{ 'This report already exists' if category == 'warning' else 'Update received' }}
+                    </div>
+                    <p class="flash-modal-text">{{ message }}</p>
+                </div>
+                <div class="flash-modal-actions">
+                    <button type="button" class="flash-modal-close" onclick="closeFlashModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endwith %}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3 col-lg-2 sidebar d-flex flex-column px-0 position-fixed" style="width: 18%;">
+            <div class="d-flex align-items-center gap-2 px-4 mb-4">
+                <div class="bg-primary text-white rounded p-1" style="line-height: 1;">📊</div>
+                <div>
+                    <div class="logo-text">Smart City</div>
+                    <div style="font-size: 0.65rem; color: #5a7b9a; letter-spacing: 1px;">PORTAL</div>
+                </div>
+            </div>
+
+            <div class="section-title">MAIN</div>
+            <a class="nav-link active" id="tab-dashboard" onclick="switchTab('dashboard')">🏠 Dashboard</a>
+            <a class="nav-link" id="tab-report" onclick="switchTab('report')">📝 Report Issue</a>
+            <a class="nav-link d-flex justify-content-between align-items-center" id="tab-history" onclick="switchTab('history')">
+                <span>📋 My Reports</span>
+                {% if stats.total > 0 %}<span class="badge bg-danger rounded-pill">{{ stats.total }}</span>{% endif %}
+            </a>
+
+            <div class="section-title mt-3">CITY</div>
+            <a class="nav-link" id="tab-map" onclick="switchTab('map')">🗺️ City Map</a>
+            <a class="nav-link" id="tab-stats" onclick="switchTab('stats')">📈 Statistics</a>
+
+            <div class="mt-auto p-3">
+                <div class="dashboard-card p-3 d-flex align-items-center gap-3 mb-2">
+                    <div class="rounded-circle bg-primary text-white d-flex justify-content-center align-items-center" style="width: 35px; height: 35px; font-weight: bold;">
+                        {{ username[0]|upper }}
+                    </div>
+                    <div>
+                        <div class="fw-bold" style="font-size: 0.9rem; color: white;">{{ username }}</div>
+                        <div style="font-size: 0.75rem; color: #8aacc8;">Citizen</div>
+                    </div>
+                </div>
+                <a href="/logout" class="nav-link text-danger text-center"><small>🚪 Logout</small></a>
+            </div>
+        </div>
+
+        <div class="col-md-9 col-lg-10 offset-md-3 offset-lg-2 p-4" style="margin-left: 18%; width: 82%;">
+
+            <div id="section-dashboard">
+                <h4 class="mb-0 fw-bold">Dashboard</h4>
+                <p style="color: #8aacc8; font-size: 0.85rem;" class="mb-4">Smart City Citizen Portal</p>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="kpi-card">
+                            <div class="kpi-num">{{ stats.total }}</div>
+                            <div class="kpi-label">My Reports</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="kpi-card">
+                            <div class="kpi-num text-warning">{{ stats.pending }}</div>
+                            <div class="kpi-label">Pending Review</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="kpi-card">
+                            <div class="kpi-num text-success">{{ stats.approved }}</div>
+                            <div class="kpi-label">Approved Reports</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="kpi-card">
+                            <div class="kpi-num text-danger">{{ stats.rejected }}</div>
+                            <div class="kpi-label">Rejected Reports</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <div class="dashboard-card h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0 fw-bold">Recent Complaints</h6>
+                                <a href="#" onclick="switchTab('history')" style="color: #38bdf8; font-size: 0.8rem; text-decoration: none;">View all →</a>
+                            </div>
+                            {% for row in complaints[:4] %}
+                            <div class="d-flex justify-content-between align-items-center mb-3 pb-3" style="border-bottom: 1px solid #143557;">
+                                <div class="d-flex gap-3 align-items-center">
+                                    <img src="{{ row['photo_url'] }}" width="40" height="40" class="rounded" style="object-fit: cover;">
+                                    <div>
+                                        <div class="report-location" style="font-size: 0.85rem; font-weight: 600;">{{ row['location'] }}</div>
+                                        <div style="font-size: 0.75rem; color: #8aacc8;">{{ row['ai_suggestion'] }}</div>
+                                    </div>
+                                </div>
+                                <div>
+                                    {% if row['citizen_status'] == 'Action Required' %}<span class="badge badge-action">Action Required</span>
+                                    {% elif row['citizen_status'] == 'Closed' %}<span class="badge badge-rejected">Closed</span>
+                                    {% elif row['mod_status'] == 'Pending' %}<span class="badge badge-pending">Pending</span>
+                                    {% elif row['mod_status'] == 'Rejected' %}<span class="badge badge-rejected">Rejected</span>
+                                    {% elif row['akim_decision'] == 'Resolved' %}<span class="badge badge-approved">Resolved</span>
+                                    {% else %}<span class="badge badge-approved">Approved</span>{% endif %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <p style="color: #8aacc8; font-size: 0.85rem;">No recent complaints.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="dashboard-card mb-3" style="cursor: pointer;" onclick="switchTab('report')">
+                            <h6 class="mb-1 fw-bold">📝 New Report</h6>
+                            <p style="color: #8aacc8; font-size: 0.8rem; margin: 0;">Report a city issue</p>
+                        </div>
+                        <div class="dashboard-card mb-3" style="cursor: pointer;" onclick="switchTab('map')">
+                            <h6 class="mb-1 fw-bold">🗺️ City Map</h6>
+                            <p style="color: #8aacc8; font-size: 0.8rem; margin: 0;">View all issues near you</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section-report" class="d-none">
+                <h4 class="mb-0 fw-bold">Report Issue</h4>
+                <p style="color: #8aacc8; font-size: 0.85rem;" class="mb-4">Submit a new city complaint</p>
+                <div class="dashboard-card col-xl-8">
+                    <p class="form-helper mb-4">AI-powered analysis will automatically categorize your report.</p>
+                    <form action="/upload" method="POST" enctype="multipart/form-data" onsubmit="return validateReportForm()">
+
+                        <div class="mb-4">
+                            <label class="form-label">Location</label>
+                            <div id="map" style="height: 250px;"></div>
+                            <div class="d-flex gap-2 mt-2">
+                                <input type="text" class="form-control" id="location" name="location" placeholder="Type an address or click on the map" required>
+                                <button type="button" class="btn btn-map-search px-3" id="searchAddressBtn" onclick="searchAddress()">Find on map</button>
+                            </div>
+                            <div class="location-feedback" id="location-feedback">Type an address and press "Find on map", or click directly on the map.</div>
+                            <input type="hidden" id="lat" name="lat">
+                            <input type="hidden" id="lng" name="lng">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Issue Description</label>
+                            <textarea class="form-control" name="description" rows="3" placeholder="Describe the problem in detail..." required></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Upload Photo</label>
+                            <div class="p-4 text-center border rounded" style="border-color: #143557 !important; border-style: dashed !important; background-color: #061d36;">
+                                <input class="form-control mb-2" type="file" name="photo" accept="image/*" required>
+                                <small style="color: #8aacc8; font-size: 0.75rem;">JPG, PNG up to 10 MB. Photo helps AI analyze the issue.</small>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-3 mt-4">
+                            <button type="submit" class="btn btn-primary px-4 py-2">Submit Report 📤</button>
+                            <button type="reset" class="btn btn-outline-secondary text-white border-0">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div id="section-history" class="d-none">
+                <h4 class="mb-0 fw-bold">My Reports</h4>
+                <p style="color: #8aacc8; font-size: 0.85rem;" class="mb-4">Track your submitted complaints</p>
+                <div class="dashboard-card p-0 overflow-hidden">
+                    <div class="d-flex gap-4 px-4 pt-3 pb-2" style="border-bottom: 1px solid #143557;">
+                        <span class="history-filter active" data-filter="all" onclick="filterReports('all')">All ({{ stats.total }})</span>
+                        <span class="history-filter" data-filter="pending" onclick="filterReports('pending')">Pending ({{ stats.pending }})</span>
+                        <span class="history-filter" data-filter="approved" onclick="filterReports('approved')">Approved ({{ stats.approved }})</span>
+                        <span class="history-filter" data-filter="rejected" onclick="filterReports('rejected')">Rejected ({{ stats.rejected }})</span>
+                    </div>
+                    <table class="table table-borderless align-middle mb-0">
+                        <tbody id="reports-table-body">
+                            {% for row in complaints %}
+                            <tr class="report-row" data-status="{% if row['mod_status'] == 'Pending' %}pending{% elif row['mod_status'] == 'Rejected' %}rejected{% elif row['mod_status'] == 'Approved' %}approved{% else %}other{% endif %}" onclick="openReportDetails({{ row['id'] }})">
+                                <td class="px-4" style="width: 60px;">
+                                    <img src="{{ row['photo_url'] }}" width="50" height="50" class="rounded" style="object-fit: cover;">
+                                </td>
+                                <td>
+                                    <div class="fw-bold mb-1 report-location" style="font-size: 0.9rem;">{{ row['location'] }}</div>
+                                    <div style="font-size: 0.75rem; color: #8aacc8;">{{ row['ai_suggestion'] }}</div>
+                                    <div class="report-meta">Submitted: {{ row['created_at'] or 'Date unavailable' }}</div>
+                                </td>
+                                <td class="text-end px-4">
+                                    {% if row['citizen_status'] == 'Action Required' %}<span class="badge badge-action px-3 py-2">Action Required</span>
+                                    {% elif row['citizen_status'] == 'Closed' %}<span class="badge badge-rejected px-3 py-2">Closed</span>
+                                    {% elif row['mod_status'] == 'Pending' %}<span class="badge badge-pending px-3 py-2">Pending</span>
+                                    {% elif row['mod_status'] == 'Rejected' %}<span class="badge badge-rejected px-3 py-2">Rejected</span>
+                                    {% elif row['akim_decision'] == 'Resolved' %}<span class="badge badge-approved px-3 py-2">Resolved</span>
+                                    {% else %}<span class="badge badge-approved px-3 py-2">Approved</span>{% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="3" class="text-center py-5" style="color: #8aacc8;">No reports yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% if complaints %}
+                    <div id="reports-empty-state" class="history-empty d-none">No reports in this category.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% for row in complaints %}
+            <div class="details-backdrop d-none" id="report-details-{{ row['id'] }}" onclick="closeReportDetails(event, {{ row['id'] }})">
+                <div class="details-card">
+                    <div class="details-header d-flex justify-content-between align-items-start gap-3">
+                        <div>
+                            <h4 class="mb-0 fw-bold">{{ row['location'] }}</h4>
+                            <div class="details-subtitle">Report #{{ row['id'] }} • Submitted {{ row['created_at'] or 'Date unavailable' }}</div>
+                        </div>
+                        <button type="button" class="flash-modal-close" onclick="closeReportDetails(null, {{ row['id'] }})">Close</button>
+                    </div>
+                    <div class="details-body">
+                        <div class="row g-4">
+                            <div class="col-lg-5">
+                                <img src="{{ row['photo_url'] }}" alt="Report photo" class="details-image">
+                            </div>
+                            <div class="col-lg-7">
+                                <div class="row g-3">
+
+                                    {% if row['akim_comment'] %}
+                                    <!-- Публичный комментарий Акимата -->
+                                    <div class="col-12">
+                                        <div class="details-panel" style="border: 1px solid #10b981; background: rgba(16, 185, 129, 0.05);">
+                                            <div class="details-section-title" style="color: #10b981;">🏛️ Official City Response</div>
+                                            <div class="details-text" style="color: #e2e8f0; font-size: 0.95rem;">{{ row['akim_comment'] }}</div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    <div class="col-12">
+                                        <div class="details-panel">
+                                            <div class="details-section-title">Citizen Description</div>
+                                            <div class="details-text">{{ row['description'] }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="details-panel">
+                                            <div class="details-section-title">AI Analysis</div>
+                                            <div class="details-text">{{ row['ai_suggestion'] }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="details-panel">
+                                            <div class="details-section-title">Report Details</div>
+                                            <div class="details-text">Status:
+                                                {% if row['citizen_status'] == 'Action Required' %}Action Required
+                                                {% elif row['citizen_status'] == 'Closed' %}Closed
+                                                {% elif row['mod_status'] == 'Pending' %}Pending
+                                                {% elif row['mod_status'] == 'Rejected' %}Rejected
+                                                {% elif row['akim_decision'] == 'Resolved' %}Resolved
+                                                {% else %}Approved{% endif %}
+                                            </div>
+                                            <div class="details-text mt-2">Moderator: {{ row['mod_status'] }}</div>
+                                            <div class="details-text mt-2">Akimat: {{ row['akim_decision'] }}</div>
+                                            {% if row['revision_count'] %}<div class="details-text mt-2">Revisions: {{ row['revision_count'] }}</div>{% endif %}
+                                            {% if row['lat'] and row['lng'] %}
+                                            <div class="details-text mt-2">Coordinates: {{ row['lat'] }}, {{ row['lng'] }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% if row['citizen_feedback'] %}
+                                    <div class="col-12">
+                                        <div class="details-panel">
+                                            <div class="details-section-title">Official Feedback</div>
+                                            <div class="details-text">{{ row['citizen_feedback'] }}</div>
+                                            <div class="details-text mt-2">
+                                                {% if row['citizen_can_resubmit'] %}
+                                                You may correct this report and submit it again.
+                                                {% else %}
+                                                This report is closed and cannot be submitted again.
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    <div class="col-12">
+                                        <div class="details-panel">
+                                            <div class="details-section-title">Status Timeline</div>
+                                            <div class="timeline">
+                                                <div class="timeline-step active">
+                                                    <div class="timeline-dot pending"></div>
+                                                    <div>
+                                                        <div class="timeline-title">Submitted</div>
+                                                        <div class="timeline-text">Your report was created on {{ row['created_at'] or 'the recorded submission date' }}.</div>
+                                                    </div>
+                                                </div>
+                                                <div class="timeline-step {% if row['mod_status'] in ['Approved', 'Rejected'] or row['akim_decision'] == 'Resolved' or row['citizen_status'] == 'Action Required' %}active{% endif %}">
+                                                    <div class="timeline-dot {% if row['mod_status'] == 'Rejected' %}rejected{% else %}approved{% endif %}"></div>
+                                                    <div>
+                                                        <div class="timeline-title">Moderator Review</div>
+                                                        <div class="timeline-text">
+                                                            {% if row['mod_status'] == 'Pending' %}
+                                                            Waiting for moderator review.
+                                                            {% elif row['citizen_status'] == 'Action Required' and row['mod_status'] == 'Rejected' %}
+                                                            The review team returned this report with required changes.
+                                                            {% elif row['mod_status'] == 'Rejected' %}
+                                                            The moderator rejected this report.
+                                                            {% else %}
+                                                            The moderator approved this report and forwarded it to Akimat.
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="timeline-step {% if row['citizen_status'] in ['Action Required', 'Closed'] or row['mod_status'] == 'Rejected' or row['mod_status'] == 'Approved' or row['akim_decision'] == 'Resolved' %}active{% endif %}">
+                                                    <div class="timeline-dot {% if row['citizen_status'] == 'Action Required' %}pending{% elif row['mod_status'] == 'Rejected' or row['citizen_status'] == 'Closed' %}rejected{% elif row['akim_decision'] == 'Resolved' %}resolved{% else %}approved{% endif %}"></div>
+                                                    <div>
+                                                        <div class="timeline-title">
+                                                            {% if row['citizen_status'] == 'Action Required' %}Correction Requested{% elif row['mod_status'] == 'Rejected' or row['citizen_status'] == 'Closed' %}Closed{% elif row['akim_decision'] == 'Resolved' %}Resolved{% else %}Akimat Processing{% endif %}
+                                                        </div>
+                                                        <div class="timeline-text">
+                                                            {% if row['citizen_status'] == 'Action Required' %}
+                                                            The city needs you to correct this report before it can move forward.
+                                                            {% elif row['citizen_status'] == 'Closed' %}
+                                                            The city closed this report and no further resubmission is allowed.
+                                                            {% elif row['mod_status'] == 'Rejected' %}
+                                                            This report was closed during moderation.
+                                                            {% elif row['akim_decision'] == 'Resolved' %}
+                                                            Akimat marked this issue as resolved.
+                                                            {% elif row['mod_status'] == 'Approved' %}
+                                                            Akimat has received the approved report and can process it.
+                                                            {% else %}
+                                                            This step will become active after moderator approval.
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% if row['citizen_can_resubmit'] %}
+                                    <div class="col-12">
+                                        <div class="details-panel">
+                                            <div class="details-section-title">Correct and Resubmit</div>
+                                            <form action="/resubmit_report/{{ row['id'] }}" method="POST" enctype="multipart/form-data">
+                                                <div class="row g-3">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Location</label>
+                                                        <input type="text" class="form-control" name="location" value="{{ row['location'] }}" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Updated Photo</label>
+                                                        <input class="form-control" type="file" name="photo" accept="image/*">
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <label class="form-label">Updated Description</label>
+                                                        <textarea class="form-control" name="description" rows="4" required>{{ row['description'] }}</textarea>
+                                                    </div>
+                                                    <div class="col-12 text-end">
+                                                        <button type="submit" class="btn btn-primary px-4">Resubmit Report</button>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div id="section-map" class="d-none">
+                <h4 class="mb-0 fw-bold">City Map</h4>
+                <p style="color: #8aacc8; font-size: 0.85rem;" class="mb-4">All active issues in Almaty</p>
+                <div class="dashboard-card p-3">
+                    <div class="d-flex justify-content-between mb-3 px-2">
+                        <span style="font-size: 0.85rem; font-weight: 600;">Almaty City Issues Map</span>
+                        <span style="font-size: 0.8rem; color: #8aacc8;">{{ all_complaints|length }} active issues</span>
+                    </div>
+                    <div id="cityMap" style="height: 500px;"></div>
+                    <div class="mt-3 text-center" style="font-size: 0.8rem; color: #8aacc8;">
+                        <span style="color: #ef4444;">🔴 Rejected/Issue</span> &nbsp;&nbsp;
+                        <span style="color: #f59e0b;">🟡 Pending</span> &nbsp;&nbsp;
+                        <span style="color: #10b981;">🟢 Approved/Resolved</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section-stats" class="d-none">
+                <h4 class="mb-0 fw-bold">Statistics</h4>
+                <p style="color: #8aacc8; font-size: 0.85rem;" class="mb-4">Monthly status breakdown for your reports</p>
+
+                <div class="row g-4">
+                    <div class="col-md-7">
+                        <div class="dashboard-card">
+                            <h6 class="mb-4" style="font-size: 0.85rem;">Monthly Reports by Status</h6>
+                            <div style="height: 320px;">
+                                <canvas id="barChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="dashboard-card">
+                            <h6 class="mb-4" style="font-size: 0.85rem;">Current Issue Breakdown</h6>
+                            <canvas id="statusChart" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    let chartsRendered = false;
+    let statusChartInstance = null;
+    let barChartInstance = null;
+
+    function closeFlashModal(event) {
+        if (event && event.target && event.target.id !== 'flashModalBackdrop') {
+            return;
+        }
+        const modal = document.getElementById('flashModalBackdrop');
+        if (modal) {
+            modal.remove();
+        }
+    }
+
+    function openReportDetails(reportId) {
+        const modal = document.getElementById(`report-details-${reportId}`);
+        if (modal) {
+            modal.classList.remove('d-none');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function closeReportDetails(event, reportId) {
+        if (event && event.target && !event.target.classList.contains('details-backdrop')) {
+            return;
+        }
+        const modal = document.getElementById(`report-details-${reportId}`);
+        if (modal) {
+            modal.classList.add('d-none');
+            document.body.style.overflow = '';
+        }
+    }
+
+    function switchTab(tabName) {
+        const sections = ['dashboard', 'report', 'history', 'map', 'stats'];
+        sections.forEach(sec => {
+            document.getElementById('section-' + sec).classList.add('d-none');
+            document.getElementById('tab-' + sec).classList.remove('active');
+        });
+        document.getElementById('section-' + tabName).classList.remove('d-none');
+        document.getElementById('tab-' + tabName).classList.add('active');
+
+        if (tabName === 'report') {
+            setTimeout(() => { reportMap.invalidateSize(); }, 100);
+        }
+        if (tabName === 'map') {
+            setTimeout(() => { cityMap.invalidateSize(); }, 100);
+        }
+        if (tabName === 'stats' && !chartsRendered) {
+            renderCharts();
+            chartsRendered = true;
+        }
+    }
+
+    const almatyBounds = L.latLngBounds(L.latLng(43.05, 76.70), L.latLng(43.40, 77.15));
+    const locationInput = document.getElementById('location');
+    const latInput = document.getElementById('lat');
+    const lngInput = document.getElementById('lng');
+    const locationFeedback = document.getElementById('location-feedback');
+    const searchAddressBtn = document.getElementById('searchAddressBtn');
+
+    const reportMap = L.map('map', { maxBounds: almatyBounds, minZoom: 11 }).setView([43.2389, 76.8897], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(reportMap);
+
+    let reportMarker;
+
+    function setLocationFeedback(message, isError = false) {
+        locationFeedback.textContent = message;
+        locationFeedback.style.color = isError ? '#fda4af' : '#9fd4f3';
+    }
+
+    function setReportMarker(lat, lng) {
+        const latLng = [lat, lng];
+        if (reportMarker) {
+            reportMarker.setLatLng(latLng);
+        } else {
+            reportMarker = L.marker(latLng).addTo(reportMap);
+        }
+        reportMap.setView(latLng, 15);
+        latInput.value = lat;
+        lngInput.value = lng;
+    }
+
+    async function reverseGeocode(lat, lng) {
+        setLocationFeedback('Looking up the selected address...');
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
+            const data = await response.json();
+            locationInput.value = data.display_name || data.name || data.address?.road || 'Selected location';
+            setLocationFeedback('Location selected on the map.');
+        } catch (error) {
+            locationInput.value = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+            setLocationFeedback('Coordinates selected. Address lookup is temporarily unavailable.', true);
+        }
+    }
+
+    reportMap.on('click', function(e) {
+        setReportMarker(e.latlng.lat, e.latlng.lng);
+        reverseGeocode(e.latlng.lat, e.latlng.lng);
+    });
+
+    async function searchAddress() {
+        const query = locationInput.value.trim();
+        if (!query) {
+            setLocationFeedback('Enter an address first.', true);
+            return;
+        }
+
+        searchAddressBtn.disabled = true;
+        searchAddressBtn.textContent = 'Searching...';
+        setLocationFeedback('Searching for the address on the map...');
+
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(query + ', Almaty, Kazakhstan')}`);
+            const results = await response.json();
+
+            if (!results.length) {
+                latInput.value = '';
+                lngInput.value = '';
+                setLocationFeedback('Address not found. Try a more specific location.', true);
+                return;
+            }
+
+            const match = results[0];
+            const lat = parseFloat(match.lat);
+            const lng = parseFloat(match.lon);
+            setReportMarker(lat, lng);
+            locationInput.value = match.display_name;
+            setLocationFeedback('Address found and pinned on the map.');
+        } catch (error) {
+            latInput.value = '';
+            lngInput.value = '';
+            setLocationFeedback('Address search is temporarily unavailable. You can still select the point manually on the map.', true);
+        } finally {
+            searchAddressBtn.disabled = false;
+            searchAddressBtn.textContent = 'Find on map';
+        }
+    }
+
+    locationInput.addEventListener('input', function() {
+        latInput.value = '';
+        lngInput.value = '';
+        setLocationFeedback('Press "Find on map" to confirm the typed address.');
+    });
+
+    locationInput.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            searchAddress();
+        }
+    });
+
+    function validateReportForm() {
+        if (!latInput.value || !lngInput.value) {
+            setLocationFeedback('Confirm the location first by clicking the map or using "Find on map".', true);
+            return false;
+        }
+        return true;
+    }
+
+    const cityMap = L.map('cityMap', { maxBounds: almatyBounds, minZoom: 11 }).setView([43.2389, 76.8897], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(cityMap);
+
+    const allComplaints = {{ all_complaints | tojson | safe }};
+
+    allComplaints.forEach(c => {
+        if (c.lat && c.lng) {
+            let circleColor = '#f59e0b';
+            if (c.mod_status === 'Approved' || c.akim_decision === 'Resolved') circleColor = '#10b981';
+            if (c.mod_status === 'Rejected') circleColor = '#ef4444';
+
+            L.circle([c.lat, c.lng], {
+                color: circleColor,
+                fillColor: circleColor,
+                fillOpacity: 0.45,
+                radius: 60
+            }).addTo(cityMap).bindPopup(`<b>${c.location}</b><br><small>${c.description}</small>`);
+        }
+    });
+
+    Chart.defaults.color = '#8aacc8';
+
+    function renderCharts() {
+        const monthlyStats = {{ monthly_stats | tojson | safe }};
+        const pending = {{ stats.pending }};
+        const approved = Math.max({{ stats.approved }} - {{ stats.resolved }}, 0);
+        const rejected = {{ stats.rejected }};
+        const resolved = {{ stats.resolved }};
+
+        if (statusChartInstance) {
+            statusChartInstance.destroy();
+        }
+        if (barChartInstance) {
+            barChartInstance.destroy();
+        }
+
+        statusChartInstance = new Chart(document.getElementById('statusChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Pending', 'Approved', 'Rejected', 'Resolved'],
+                datasets: [{
+                    data: [pending, approved, rejected, resolved],
+                    backgroundColor: ['#f59e0b', '#10b981', '#ef4444', '#38bdf8'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                cutout: '72%',
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+
+        barChartInstance = new Chart(document.getElementById('barChart'), {
+            type: 'bar',
+            data: {
+                labels: monthlyStats.labels,
+                datasets: [
+                    {
+                        label: 'Pending',
+                        data: monthlyStats.pending,
+                        backgroundColor: '#f59e0b',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Approved',
+                        data: monthlyStats.approved,
+                        backgroundColor: '#10b981',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Rejected',
+                        data: monthlyStats.rejected,
+                        backgroundColor: '#ef4444',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Resolved',
+                        data: monthlyStats.resolved,
+                        backgroundColor: '#38bdf8',
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0,
+                            stepSize: 1
+                        },
+                        grid: { color: '#143557' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+
+    function filterReports(filterName) {
+        const filters = document.querySelectorAll('.history-filter');
+        const rows = document.querySelectorAll('#reports-table-body tr[data-status]');
+        const emptyState = document.getElementById('reports-empty-state');
+        let visibleRows = 0;
+
+        filters.forEach(filter => {
+            filter.classList.toggle('active', filter.dataset.filter === filterName);
+        });
+
+        rows.forEach(row => {
+            const shouldShow = filterName === 'all' || row.dataset.status === filterName;
+            row.classList.toggle('d-none', !shouldShow);
+            if (shouldShow) {
+                visibleRows += 1;
+            }
+        });
+
+        if (emptyState) {
+            emptyState.classList.toggle('d-none', visibleRows !== 0);
+        }
+    }
+</script>
+
+</body>
+</html>

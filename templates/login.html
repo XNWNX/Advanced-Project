@@ -60,19 +60,23 @@
         .form-control {
             background-color: #0f4073;
             border: 1px solid #1a518b;
-            color: white;
+            color: #f8fbff;
             border-radius: 10px;
             padding: 10px 15px;
         }
         .form-control:focus {
             background-color: #134b85;
             border-color: #29a0e3;
-            color: white;
+            color: #f8fbff;
             box-shadow: none;
         }
         .form-control::placeholder {
-            color: #5d81a6;
+            color: #8fb2d3;
+            opacity: 1;
         }
+        .form-control::-webkit-input-placeholder { color: #8fb2d3; }
+        .form-control::-moz-placeholder { color: #8fb2d3; opacity: 1; }
+        .form-control, .form-control[type="password"] { caret-color: #f8fbff; }
         .btn-primary {
             background-color: #2fb1f5;
             border: none;
@@ -104,19 +108,86 @@
             font-size: 0.75rem;
             color: #4a6f94;
         }
+        .auth-subtitle {
+            color: #bfd7ee;
+        }
+        .auth-muted {
+            color: #a9c4dc;
+        }
+        .flash-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 10, 20, 0.68);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            z-index: 2000;
+        }
+        .flash-modal-card {
+            width: min(560px, 100%);
+            background: linear-gradient(180deg, #f8fbff 0%, #eef5fb 100%);
+            color: #16324a;
+            border-radius: 18px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(17, 54, 84, 0.12);
+            overflow: hidden;
+        }
+        .flash-modal-header {
+            padding: 18px 22px 8px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.3px;
+        }
+        .flash-modal-header.warning { color: #b45309; }
+        .flash-modal-header.success { color: #0f766e; }
+        .flash-modal-header.danger { color: #b91c1c; }
+        .flash-modal-body {
+            padding: 0 22px 22px;
+        }
+        .flash-modal-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+        .flash-modal-text {
+            color: #35516a;
+            font-size: 0.98rem;
+            line-height: 1.6;
+            margin-bottom: 0;
+        }
+        .flash-modal-actions {
+            padding: 0 22px 22px;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .flash-modal-close {
+            background: #0f3d6a;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 18px;
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-            <div class="position-fixed top-0 start-50 translate-middle-x w-100" style="z-index: 1050;">
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show text-center m-0 shadow" role="alert">
-                        <strong>System:</strong> {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            {% set category, message = messages[-1] %}
+            <div class="flash-modal-backdrop" id="flashModalBackdrop" onclick="closeFlashModal(event)">
+                <div class="flash-modal-card" role="dialog" aria-modal="true" aria-labelledby="flashModalTitle">
+                    <div class="flash-modal-header {{ category }}">System Notification</div>
+                    <div class="flash-modal-body">
+                        <div class="flash-modal-title" id="flashModalTitle">Action required</div>
+                        <p class="flash-modal-text">{{ message }}</p>
                     </div>
-                {% endfor %}
+                    <div class="flash-modal-actions">
+                        <button type="button" class="flash-modal-close" onclick="closeFlashModal()">Close</button>
+                    </div>
+                </div>
             </div>
         {% endif %}
     {% endwith %}
@@ -148,7 +219,7 @@
 
                     <div id="citizen-login-block">
                         <h4 class="fw-bold mb-1">Welcome back</h4>
-                        <p class="text-muted mb-4" style="font-size: 0.9rem;">Sign in to report city issues</p>
+                        <p class="auth-subtitle mb-4" style="font-size: 0.9rem;">Sign in to report city issues</p>
 
                         <form action="/login" method="POST">
                             <input type="hidden" name="login_type" value="citizen">
@@ -164,14 +235,14 @@
                         </form>
 
                         <div class="text-center">
-                            <span class="text-muted" style="font-size: 0.85rem;">Don't have an account? </span>
+                            <span class="auth-muted" style="font-size: 0.85rem;">Don't have an account? </span>
                             <span class="switch-link fw-bold" onclick="toggleAuthMode('register')">Register here</span>
                         </div>
                     </div>
 
                     <div id="citizen-register-block" class="d-none">
                         <h4 class="fw-bold mb-1">Create Account</h4>
-                        <p class="text-muted mb-4" style="font-size: 0.9rem;">Join Smart City — report issues in your area</p>
+                        <p class="auth-subtitle mb-4" style="font-size: 0.9rem;">Join Smart City — report issues in your area</p>
 
                         <form action="/register" method="POST">
                             <div class="mb-3">
@@ -194,7 +265,7 @@
 
                 <div class="tab-pane fade" id="staff-pane" role="tabpanel">
                     <h4 class="fw-bold mb-1">Staff Access</h4>
-                    <p class="text-muted mb-3" style="font-size: 0.9rem;">Authorized Akimat personnel only</p>
+                    <p class="auth-subtitle mb-3" style="font-size: 0.9rem;">Authorized Akimat personnel only</p>
 
                     <div class="staff-warning p-3 mb-4 d-flex align-items-center gap-2">
                         <span>🔒</span>
@@ -212,10 +283,7 @@
                             <input type="password" name="password" class="form-control" placeholder="••••••••" required>
                         </div>
 
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary w-50" style="background-color: #2fb1f5;">Login as Moderator</button>
-                            <button type="submit" class="btn btn-dark w-50" style="background-color: #072646; border: 1px solid #1a518b;">Login as Akim</button>
-                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Login as Staff</button>
                     </form>
                 </div>
 
@@ -229,6 +297,16 @@
     </div>
 
     <script>
+        function closeFlashModal(event) {
+            if (event && event.target && event.target.id !== 'flashModalBackdrop') {
+                return;
+            }
+            const modal = document.getElementById('flashModalBackdrop');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
         function toggleAuthMode(mode) {
             const loginBlock = document.getElementById('citizen-login-block');
             const registerBlock = document.getElementById('citizen-register-block');
