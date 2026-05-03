@@ -6,7 +6,7 @@ import io
 import sqlite3
 import unicodedata
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from google import genai
 from PIL import Image
@@ -26,6 +26,7 @@ load_dotenv() # Загружаем скрытый ключ
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.secret_key = 'some_random_secret_string_for_sessions'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=5) # Сессия умрет через 30 минут
 
 # БЕРЕМ КЛЮЧ ИЗ .env, ЧТОБЫ ИИ СНОВА ЗАРАБОТАЛ!
 API_KEY = os.getenv("GEMINI_API_KEY")
@@ -678,6 +679,7 @@ def login():
                 flash("Error: You are a Staff member. Use the Staff tab.", "danger")
                 return redirect(url_for('login'))
 
+            session.permanent = True  # <--- Включаем строгий таймер
             session['user_id'] = user['id']
             session['username'] = user['username']
             session['role'] = actual_role

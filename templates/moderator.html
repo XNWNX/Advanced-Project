@@ -451,5 +451,42 @@
     switchTab(initialModeratorTab);
 </script>
 
+<!-- Скрытый движок перевода Google -->
+    <div id="google_translate_element" style="display: none;"></div>
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'kk,ru,en',
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+
+        // Функция, которая запоминает язык и перезагружает страницу
+        function changeLanguage(lang) {
+            // Очищаем старый выбор
+            document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=" + location.hostname + "; path=/;";
+
+            // Если выбран не английский (дефолтный), ставим новый куки
+            if (lang !== 'en') {
+                document.cookie = "googtrans=/en/" + lang + "; path=/";
+                document.cookie = "googtrans=/en/" + lang + "; domain=" + location.hostname + "; path=/";
+            }
+            // Перезагружаем страницу, чтобы перевод сработал мгновенно
+            window.location.reload();
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+    <!-- Скрываем весь мусор от Google (верхнюю панель, логотипы и подсветку текста) -->
+    <style>
+        .goog-te-banner-frame.skiptranslate { display: none !important; }
+        body { top: 0px !important; position: static !important; }
+        .goog-tooltip { display: none !important; }
+        .goog-tooltip:hover { display: none !important; }
+        .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; border: none !important; }
+    </style>
+
 </body>
 </html>
