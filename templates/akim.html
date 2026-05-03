@@ -6,7 +6,7 @@
     <title>Akim Decision Center - Smart City</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- Подключаем Карты и Графики -->
+    <!-- либы для карт и чартов -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -15,9 +15,11 @@
         body { background-color: #061d36; color: #e2e8f0; font-family: 'Segoe UI', Tahoma, sans-serif; overflow-x: hidden; }
         .sidebar { background-color: #031427; min-height: 100vh; border-right: 1px solid #143557; padding-top: 20px; }
         .logo-text { font-weight: 800; font-size: 1.2rem; color: #fff; }
+
         .nav-link { color: #8aacc8; border-radius: 8px; margin: 4px 15px; padding: 10px 15px; cursor: pointer; transition: 0.3s; font-size: 0.9rem; }
         .nav-link:hover, .nav-link.active { background-color: #0f3d6a; color: white; font-weight: 600; }
         .section-title { font-size: 0.65rem; color: #5a7b9a; margin: 15px 0 5px 20px; text-transform: uppercase; letter-spacing: 1px; }
+
         .dashboard-card { background-color: #0b2e53; border-radius: 12px; border: 1px solid #143557; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
         .kpi-card { background-color: #0b2e53; border-radius: 12px; border: 1px solid #143557; padding: 20px; display: flex; flex-direction: column; justify-content: center; }
         .kpi-num { font-size: 2rem; font-weight: 700; color: #38bdf8; line-height: 1; }
@@ -25,23 +27,29 @@
         .kpi-num.green { color: #10b981; }
         .kpi-num.orange { color: #f59e0b; }
         .kpi-label { font-size: 0.8rem; color: #8aacc8; margin-top: 5px; }
+
         .decision-card { background: #0d345d; border: 1px solid #143557; border-radius: 14px; padding: 16px; margin-bottom: 16px; cursor: pointer; transition: 0.2s ease; }
         .decision-card:hover { border-color: #2b6ea4; background: #103a63; }
         .decision-meta { color: #8aacc8; font-size: 0.75rem; margin-top: 8px; }
+
         .status-badge { border-radius: 999px; padding: 8px 14px; font-size: 0.78rem; font-weight: 700; display: inline-block; }
         .status-awaiting { border: 1px solid #94a3b8; color: #cbd5e1; }
         .status-resolved { border: 1px solid #38bdf8; color: #38bdf8; }
         .status-high { border: 1px solid #ef4444; color: #ef4444; }
         .status-medium { border: 1px solid #f59e0b; color: #f59e0b; }
         .status-low { border: 1px solid #10b981; color: #10b981; }
+
         .info-label { font-size: 0.65rem; color: #5a7b9a; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; display: block; margin-bottom: 4px; }
         .ai-analysis-box { background-color: rgba(56, 189, 248, 0.05); border-left: 3px solid #38bdf8; padding: 10px 12px; border-radius: 0 8px 8px 0; }
         .ai-analysis-header { color: #38bdf8; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; font-weight: 800; }
+
         .form-select, .form-control { background-color: #061d36; border: 1px solid #143557; color: #f8fbff; border-radius: 8px; font-size: 0.85rem; }
         .form-select:focus, .form-control:focus { background-color: #092442; border-color: #38bdf8; color: #f8fbff; box-shadow: none; }
         .form-control::placeholder { color: #8aacc8; opacity: 1; }
+
         .btn-submit { background-color: #38bdf8; border: none; color: #031427; font-weight: 700; border-radius: 8px; padding: 9px 18px; transition: 0.2s; }
         .btn-submit:hover { background-color: #0ea5e9; }
+
         .flash-modal-backdrop, .details-backdrop { position: fixed; inset: 0; background: rgba(2, 10, 20, 0.72); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 2000; }
         .flash-modal-card, .details-card { width: min(960px, 100%); background: #0b2e53; border: 1px solid #143557; border-radius: 18px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35); overflow: hidden; }
         .flash-modal-card { max-width: 560px; }
@@ -49,6 +57,7 @@
         .flash-modal-title { font-size: 1.2rem; font-weight: 800; color: #ffffff; margin-bottom: 8px; }
         .flash-modal-text { color: #bfd7ee; line-height: 1.6; margin-bottom: 0; }
         .flash-modal-actions { padding: 0 22px 22px; display: flex; justify-content: flex-end; }
+
         .details-card { max-height: 88vh; overflow-y: auto; }
         .details-body { padding: 24px; }
         .details-image { width: 100%; border-radius: 14px; border: 1px solid #143557; object-fit: cover; max-height: 320px; }
@@ -63,14 +72,14 @@
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
         {% set category, message = messages[-1] %}
-        <div class="flash-modal-backdrop" id="flashModalBackdrop" onclick="closeFlashModal(event)">
+        <div class="flash-modal-backdrop" id="flashModalBackdrop" onclick="closeMsg(event)">
             <div class="flash-modal-card">
                 <div class="flash-modal-header">
                     <div class="flash-modal-title">Akimat update</div>
                     <p class="flash-modal-text">{{ message }}</p>
                 </div>
                 <div class="flash-modal-actions">
-                    <button type="button" class="btn btn-submit" onclick="closeFlashModal()">Close</button>
+                    <button type="button" class="btn btn-submit" onclick="closeMsg()">Close</button>
                 </div>
             </div>
         </div>
@@ -89,14 +98,14 @@
             </div>
 
             <div class="section-title">Akimat</div>
-            <a class="nav-link active" id="tab-decision" onclick="switchTab('decision')">📋 Decision Center</a>
-            <a class="nav-link d-flex justify-content-between align-items-center" id="tab-urgent" onclick="switchTab('urgent')">
+            <a class="nav-link active" id="tab-decision" onclick="changeTab('decision')">📋 Decision Center</a>
+            <a class="nav-link d-flex justify-content-between align-items-center" id="tab-urgent" onclick="changeTab('urgent')">
                 <span>⚡ Urgent Issues</span>
                 {% if stats.urgent > 0 %}<span class="badge bg-danger rounded-pill">{{ stats.urgent }}</span>{% endif %}
             </a>
-            <a class="nav-link" id="tab-map" onclick="switchTab('map')">🗺️ City Map</a>
-            <a class="nav-link" id="tab-report" onclick="switchTab('report')">📊 City Report</a>
-            <a class="nav-link" id="tab-staff" onclick="switchTab('staff')">👥 Staff Notes</a>
+            <a class="nav-link" id="tab-map" onclick="changeTab('map')">🗺️ City Map</a>
+            <a class="nav-link" id="tab-report" onclick="changeTab('report')">📊 City Report</a>
+            <a class="nav-link" id="tab-staff" onclick="changeTab('staff')">👥 Staff Notes</a>
 
             <div class="mt-auto p-3">
                 <div class="dashboard-card p-3 d-flex align-items-center gap-3 mb-2" style="background-color: #092442;">
@@ -136,24 +145,24 @@
                         <h6 class="mb-0 fw-bold">Approved Issues</h6>
                         <span style="font-size: 0.78rem; color: #8aacc8;">Click a report to inspect details</span>
                     </div>
-                    {% for row in complaints %}
-                    <div class="decision-card" onclick="openReportDetails({{ row['id'] }})">
+                    {% for req in complaints %}
+                    <div class="decision-card" onclick="openDetails({{ req['id'] }})">
                         <div class="row g-3 align-items-center">
-                            <div class="col-md-1 text-center"><img src="{{ row['photo_url'] }}" width="72" height="72" class="rounded border border-secondary shadow-sm" style="object-fit: cover;"></div>
+                            <div class="col-md-1 text-center"><img src="{{ req['photo_url'] }}" width="72" height="72" class="rounded border border-secondary shadow-sm" style="object-fit: cover;"></div>
                             <div class="col-md-6">
-                                <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">{{ row['location'] }}</div>
-                                <div style="font-size: 0.82rem; color: #8aacc8;">{{ row['description'] }}</div>
-                                <div class="decision-meta">Submitted: {{ row['created_at'] or 'Date unavailable' }} • {{ row['report_code'] }}</div>
+                                <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">{{ req['location'] }}</div>
+                                <div style="font-size: 0.82rem; color: #8aacc8;">{{ req['description'] }}</div>
+                                <div class="decision-meta">Submitted: {{ req['created_at'] or 'Date unavailable' }} • {{ req['report_code'] }}</div>
                             </div>
                             <div class="col-md-2">
-                                {% if row['akim_urgency'] == 'High' %}<div class="status-badge status-high">High urgency</div>
-                                {% elif row['akim_urgency'] == 'Medium' %}<div class="status-badge status-medium">Medium urgency</div>
-                                {% elif row['akim_urgency'] == 'Low' %}<div class="status-badge status-low">Low urgency</div>
+                                {% if req['akim_urgency'] == 'High' %}<div class="status-badge status-high">High urgency</div>
+                                {% elif req['akim_urgency'] == 'Medium' %}<div class="status-badge status-medium">Medium urgency</div>
+                                {% elif req['akim_urgency'] == 'Low' %}<div class="status-badge status-low">Low urgency</div>
                                 {% else %}<div class="status-badge status-awaiting">Unassigned</div>{% endif %}
                             </div>
                             <div class="col-md-3 text-end">
-                                {% if row['akim_decision'] == 'Resolved' %}<div class="status-badge status-resolved">Resolved</div>
-                                {% else %}<div class="status-badge status-awaiting">{{ row['akim_decision'] }}</div>{% endif %}
+                                {% if req['akim_decision'] == 'Resolved' %}<div class="status-badge status-resolved">Resolved</div>
+                                {% else %}<div class="status-badge status-awaiting">{{ req['akim_decision'] }}</div>{% endif %}
                             </div>
                         </div>
                     </div>
@@ -163,18 +172,18 @@
                 </div>
             </div>
 
-            <!-- Вкладки Urgent, Map, Report, Staff -->
+            <!-- табы -->
             <div id="section-urgent" class="d-none">
                 <h4 class="mb-0 fw-bold">Urgent Issues</h4>
                 <div class="dashboard-card mt-3">
-                    {% set urgent_rows = complaints | selectattr('akim_urgency', 'equalto', 'High') | list %}
-                    {% for row in urgent_rows %}
-                    <div class="decision-card" onclick="openReportDetails({{ row['id'] }})">
+                    {% set urgents = complaints | selectattr('akim_urgency', 'equalto', 'High') | list %}
+                    {% for r in urgents %}
+                    <div class="decision-card" onclick="openDetails({{ r['id'] }})">
                         <div class="row g-3 align-items-center">
-                            <div class="col-md-1 text-center"><img src="{{ row['photo_url'] }}" width="72" height="72" class="rounded border border-secondary shadow-sm" style="object-fit: cover;"></div>
+                            <div class="col-md-1 text-center"><img src="{{ r['photo_url'] }}" width="72" height="72" class="rounded border border-secondary shadow-sm" style="object-fit: cover;"></div>
                             <div class="col-md-8">
-                                <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">{{ row['location'] }}</div>
-                                <div class="decision-meta">{{ row['akim_decision'] }}</div>
+                                <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">{{ r['location'] }}</div>
+                                <div class="decision-meta">{{ r['akim_decision'] }}</div>
                             </div>
                             <div class="col-md-3 text-end"><div class="status-badge status-high">High urgency</div></div>
                         </div>
@@ -223,22 +232,22 @@
                 <p style="color: #8aacc8; font-size: 0.85rem;" class="mb-4">Click on any note to instantly open the corresponding report</p>
                 <div class="dashboard-card">
                     <div class="info-label mb-3">Recent Internal Notes</div>
-                    {% for item in recent_notes %}
-                    <!-- Делаем заметку кликабельной через класс decision-card и функцию openReportDetails -->
-                    <div class="decision-card" onclick="openReportDetails({{ item['complaint_id'] }})" style="margin-bottom: 12px; padding: 14px 18px;">
+                    {% for n in recent_notes %}
+                    <!-- кликабельная заметка -->
+                    <div class="decision-card" onclick="openDetails({{ n['complaint_id'] }})" style="margin-bottom: 12px; padding: 14px 18px;">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <div>
                                 <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">
-                                    {{ item['location'] }} <span style="color: #8aacc8; font-weight: 500; font-size: 0.85rem;">#{{ item['complaint_id'] }}</span>
+                                    {{ n['location'] }} <span style="color: #8aacc8; font-weight: 500; font-size: 0.85rem;">#{{ n['complaint_id'] }}</span>
                                 </div>
                                 <div style="color: #8aacc8; font-size: 0.78rem; margin-top: 2px;">
-                                    {{ item['created_at'] }} • {{ item['author_username'] }} ({{ item['author_role'] }})
+                                    {{ n['created_at'] }} • {{ n['author_username'] }} ({{ n['author_role'] }})
                                 </div>
                             </div>
                             <span style="color: #38bdf8; font-size: 0.82rem; font-weight: 600;">Review →</span>
                         </div>
                         <div style="color: #bfd7ee; line-height: 1.5; font-size: 0.9rem;">
-                            {{ item['note_text'] }}
+                            {{ n['note_text'] }}
                         </div>
                     </div>
                     {% else %}
@@ -250,57 +259,57 @@
     </div>
 </div>
 
-<!-- МОДАЛЬНЫЕ ОКНА ДЕТАЛЕЙ ЖАЛОБЫ (АКИМ) -->
-{% for row in complaints %}
-<div class="details-backdrop d-none" id="report-details-{{ row['id'] }}" onclick="closeReportDetails(event, {{ row['id'] }})">
+<!-- модалки с деталями -->
+{% for req in complaints %}
+<div class="details-backdrop d-none" id="report-details-{{ req['id'] }}" onclick="closeDetails(event, {{ req['id'] }})">
     <div class="details-card">
         <div class="details-header d-flex justify-content-between align-items-start gap-3">
             <div>
-                <h4 class="mb-0 fw-bold">{{ row['location'] }}</h4>
-                <div style="color: #8aacc8; font-size: 0.82rem; margin-top: 6px;">{{ row['report_code'] }} • Submitted {{ row['created_at'] or 'Date unavailable' }}</div>
+                <h4 class="mb-0 fw-bold">{{ req['location'] }}</h4>
+                <div style="color: #8aacc8; font-size: 0.82rem; margin-top: 6px;">{{ req['report_code'] }} • Submitted {{ req['created_at'] or 'Date unavailable' }}</div>
             </div>
-            <button type="button" class="btn btn-secondary" onclick="closeReportDetails(null, {{ row['id'] }})">Close</button>
+            <button type="button" class="btn btn-secondary" onclick="closeDetails(null, {{ req['id'] }})">Close</button>
         </div>
         <div class="details-body">
             <div class="row g-4">
-                <div class="col-lg-5"><img src="{{ row['photo_url'] }}" alt="Report photo" class="details-image"></div>
+                <div class="col-lg-5"><img src="{{ req['photo_url'] }}" alt="Report photo" class="details-image"></div>
                 <div class="col-lg-7">
                     <div class="row g-3">
                         <div class="col-12">
                             <div class="details-panel">
                                 <div class="details-section-title">Citizen Description</div>
-                                <div class="details-text">{{ row['description'] }}</div>
+                                <div class="details-text">{{ req['description'] }}</div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="details-panel">
                                 <div class="details-section-title">AI Analysis</div>
-                                <div class="details-text">{{ row['ai_suggestion'] }}</div>
+                                <div class="details-text">{{ req['ai_suggestion'] }}</div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="details-panel">
                                 <div class="details-section-title">Decision Data</div>
-                                <div class="details-text">Moderator status: {{ row['mod_status'] }}</div>
-                                {% if row['citizen_status'] %}<div class="details-text mt-2">Citizen status: {{ row['citizen_status'] }}</div>{% endif %}
-                                {% if row['akim_comment'] %}<div class="details-text mt-2">Previous comment: {{ row['akim_comment'] }}</div>{% endif %}
+                                <div class="details-text">Moderator status: {{ req['mod_status'] }}</div>
+                                {% if req['citizen_status'] %}<div class="details-text mt-2">Citizen status: {{ req['citizen_status'] }}</div>{% endif %}
+                                {% if req['akim_comment'] %}<div class="details-text mt-2">Previous comment: {{ req['akim_comment'] }}</div>{% endif %}
                             </div>
                         </div>
 
-                        <!-- БЛОК 1: Внутренние комментарии -->
+                        <!-- комменты для своих -->
                         <div class="col-12" onclick="event.stopPropagation()">
                             <div class="details-panel">
                                 <div class="details-section-title mb-2">Internal Staff Notes</div>
 
-                                {% set report_notes = notes_by_complaint.get(row['id'], []) %}
-                                {% for item in report_notes %}
+                                {% set rep_notes = notes_by_complaint.get(req['id'], []) %}
+                                {% for n in rep_notes %}
                                 <div class="details-text mb-2" style="font-size: 0.8rem;">
-                                    <strong style="color: #38bdf8;">{{ item['author_username'] }} ({{ item['author_role'] }})</strong>:
-                                    <span style="color: #bfd7ee;">{{ item['note_text'] }}</span>
+                                    <strong style="color: #38bdf8;">{{ n['author_username'] }} ({{ n['author_role'] }})</strong>:
+                                    <span style="color: #bfd7ee;">{{ n['note_text'] }}</span>
                                 </div>
                                 {% endfor %}
 
-                                <form action="/complaint_note/{{ row['id'] }}" method="POST" class="mt-3">
+                                <form action="/complaint_note/{{ req['id'] }}" method="POST" class="mt-3">
                                     <input type="hidden" name="dashboard" value="akim">
                                     <input type="hidden" name="active_tab" value="{{ active_tab or 'decision' }}">
                                     <input type="hidden" name="report_query" value="{{ report_query or '' }}">
@@ -312,62 +321,62 @@
                             </div>
                         </div>
 
-                        <!-- БЛОК 2: Главное решение Акима (САМЫЙ НИЗ) -->
+                        <!-- основное решение -->
                         <div class="col-12" onclick="event.stopPropagation()">
                             <div class="details-panel" style="border: 1px solid #38bdf8; background: #0b2e53;">
                                 <div class="details-section-title text-white mb-3">Official Decision Update</div>
 
-                                <form action="/akim_action/{{ row['id'] }}" method="POST" onsubmit="return confirmAkimSubmit(this)">
+                                <form action="/akim_action/{{ req['id'] }}" method="POST" onsubmit="return checkSubmit(this)">
                                     <input type="hidden" name="active_tab" value="{{ active_tab or 'decision' }}">
                                     <input type="hidden" name="report_query" value="{{ report_query or '' }}">
                                     <div class="row g-3 mb-3">
                                         <div class="col-md-6">
                                             <label class="info-label">Urgency Level</label>
                                             <select name="urgency" class="form-select">
-                                                <option value="Unassigned" {% if row['akim_urgency'] == 'Unassigned' %}selected{% endif %}>Unassigned</option>
-                                                <option value="Low" {% if row['akim_urgency'] == 'Low' %}selected{% endif %}>Low</option>
-                                                <option value="Medium" {% if row['akim_urgency'] == 'Medium' %}selected{% endif %}>Medium</option>
-                                                <option value="High" {% if row['akim_urgency'] == 'High' %}selected{% endif %}>High</option>
+                                                <option value="Unassigned" {% if req['akim_urgency'] == 'Unassigned' %}selected{% endif %}>Unassigned</option>
+                                                <option value="Low" {% if req['akim_urgency'] == 'Low' %}selected{% endif %}>Low</option>
+                                                <option value="Medium" {% if req['akim_urgency'] == 'Medium' %}selected{% endif %}>Medium</option>
+                                                <option value="High" {% if req['akim_urgency'] == 'High' %}selected{% endif %}>High</option>
                                             </select>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="info-label">Official Decision</label>
                                             <select name="decision" class="form-select">
-                                                <option value="Waiting for Akimat" {% if row['akim_decision'] == 'Waiting for Akimat' %}selected{% endif %}>Waiting for Akimat</option>
-                                                <option value="Accepted" {% if row['akim_decision'] == 'Accepted' or row['akim_decision'] == 'Will Fix' %}selected{% endif %}>Accepted</option>
-                                                <option value="In Progress" {% if row['akim_decision'] == 'In Progress' %}selected{% endif %}>In Progress</option>
-                                                <option value="Resolved" {% if row['akim_decision'] == 'Resolved' %}selected{% endif %}>Resolved</option>
+                                                <option value="Waiting for Akimat" {% if req['akim_decision'] == 'Waiting for Akimat' %}selected{% endif %}>Waiting for Akimat</option>
+                                                <option value="Accepted" {% if req['akim_decision'] == 'Accepted' or req['akim_decision'] == 'Will Fix' %}selected{% endif %}>Accepted</option>
+                                                <option value="In Progress" {% if req['akim_decision'] == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                                <option value="Resolved" {% if req['akim_decision'] == 'Resolved' %}selected{% endif %}>Resolved</option>
                                             </select>
                                         </div>
                                         <div class="col-12">
                                             <label class="info-label">Public Status Comment</label>
-                                            <textarea name="akim_comment" class="form-control" rows="2" placeholder="Optional. E.g. 'Contractors dispatched'...">{{ row['akim_comment'] or '' }}</textarea>
+                                            <textarea name="akim_comment" class="form-control" rows="2" placeholder="Optional. E.g. 'Contractors dispatched'...">{{ req['akim_comment'] or '' }}</textarea>
                                         </div>
                                     </div>
                                     <button type="submit" class="btn btn-submit w-100 py-2 mb-2" style="font-size: 1rem;">💾 Save Decision Update</button>
                                 </form>
 
-                                <!-- Кнопка Return to Citizen (открывает скрытую форму) -->
-                                <button type="button" class="btn w-100 py-2" style="font-size: 0.9rem; background-color: transparent; border: 1px solid #f59e0b; color: #f59e0b; font-weight: bold;" onclick="toggleAkimRejectForm({{ row['id'] }})">↩️ Request Clarification / Return to Citizen</button>
+                                <!-- кнопка возврата -->
+                                <button type="button" class="btn w-100 py-2" style="font-size: 0.9rem; background-color: transparent; border: 1px solid #f59e0b; color: #f59e0b; font-weight: bold;" onclick="toggleReject({{ req['id'] }})">↩️ Request Clarification / Return to Citizen</button>
 
-                                <!-- Скрытая форма возврата жителю -->
-                                <div id="akim-reject-container-{{ row['id'] }}" class="d-none mt-3 pt-3" style="border-top: 1px solid #143557;">
-                                    <form action="/akim_citizen_action/{{ row['id'] }}" method="POST" onsubmit="return confirmCitizenDispatch(this, 'akim')">
+                                <!-- форма возврата (скрыта) -->
+                                <div id="akim-reject-container-{{ req['id'] }}" class="d-none mt-3 pt-3" style="border-top: 1px solid #143557;">
+                                    <form action="/akim_citizen_action/{{ req['id'] }}" method="POST" onsubmit="return checkDispatch(this)">
                                         <input type="hidden" name="active_tab" value="{{ active_tab or 'decision' }}">
                                         <input type="hidden" name="report_query" value="{{ report_query or '' }}">
 
                                         <label class="info-label text-warning">Citizen Message</label>
-                                        <textarea name="citizen_feedback" class="form-control mb-3" rows="3" placeholder="Explain what the citizen needs to clarify or why the city will not proceed..." required></textarea>
+                                        <textarea name="citizen_feedback" class="form-control mb-3" rows="3" placeholder="Explain what the citizen needs to clarify..." required></textarea>
 
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" value="1" id="akim-citizen-resubmit-{{ row['id'] }}" name="citizen_can_resubmit" checked>
-                                            <label class="form-check-label" for="akim-citizen-resubmit-{{ row['id'] }}" style="color: #e2e8f0; font-size: 0.85rem;">
+                                            <input class="form-check-input" type="checkbox" value="1" id="akim-citizen-resubmit-{{ req['id'] }}" name="citizen_can_resubmit" checked>
+                                            <label class="form-check-label" for="akim-citizen-resubmit-{{ req['id'] }}" style="color: #e2e8f0; font-size: 0.85rem;">
                                                 Allow the citizen to correct and resubmit
                                             </label>
                                         </div>
 
                                         <div class="d-flex gap-2 justify-content-end">
-                                            <button type="button" class="btn btn-secondary px-4" onclick="toggleAkimRejectForm({{ row['id'] }})">Cancel</button>
+                                            <button type="button" class="btn btn-secondary px-4" onclick="toggleReject({{ req['id'] }})">Cancel</button>
                                             <button type="submit" class="btn px-4 fw-bold" style="background-color: #f59e0b; color: #031427;">Send to Citizen</button>
                                         </div>
                                     </form>
@@ -384,107 +393,99 @@
 {% endfor %}
 
 <script>
-    const initialAkimTab = {{ (active_tab or 'decision') | tojson }};
+    const startTab = {{ (active_tab or 'decision') | tojson }};
 
-    function closeFlashModal(event) {
-        if (event && event.target && event.target.id !== 'flashModalBackdrop') return;
-        const modal = document.getElementById('flashModalBackdrop');
-        if (modal) modal.remove();
+    function closeMsg(evt) {
+        if (evt && evt.target && evt.target.id !== 'flashModalBackdrop') return;
+        const mod = document.getElementById('flashModalBackdrop');
+        if (mod) mod.remove();
     }
 
-    // MAP AND CHARTS INITIALIZATION VARIABLES
-    let chartsRendered = false;
-    let mapInitialized = false;
-    let akimMap;
+    let chartsOk = false;
+    let mapOk = false;
+    let mapObj;
 
-    function switchTab(tabName) {
-        const sections = ['decision', 'urgent', 'map', 'report', 'staff'];
-        sections.forEach(sec => {
+    function changeTab(tName) {
+        const arr = ['decision', 'urgent', 'map', 'report', 'staff'];
+        arr.forEach(sec => {
             const el = document.getElementById('section-' + sec);
             if(el) el.classList.add('d-none');
-            const tab = document.getElementById('tab-' + sec);
-            if(tab) tab.classList.remove('active');
+            const tabEl = document.getElementById('tab-' + sec);
+            if(tabEl) tabEl.classList.remove('active');
         });
 
-        const activeSection = document.getElementById('section-' + tabName);
-        if(activeSection) activeSection.classList.remove('d-none');
+        const activeSec = document.getElementById('section-' + tName);
+        if(activeSec) activeSec.classList.remove('d-none');
+        const aTab = document.getElementById('tab-' + tName);
+        if(aTab) aTab.classList.add('active');
 
-        const activeTab = document.getElementById('tab-' + tabName);
-        if(activeTab) activeTab.classList.add('active');
-
-        document.querySelectorAll('input[name="active_tab"]').forEach(input => {
-            input.value = tabName;
+        document.querySelectorAll('input[name="active_tab"]').forEach(inp => {
+            inp.value = tName;
         });
 
-        // Trigger map resizing when tab is opened
-        if (tabName === 'map') {
-            if (!mapInitialized) {
-                initAkimMap();
-                mapInitialized = true;
+        if (tName === 'map') {
+            if (!mapOk) {
+                initMap();
+                mapOk = true;
             } else {
-                setTimeout(() => { akimMap.invalidateSize(); }, 100);
+                setTimeout(() => { mapObj.invalidateSize(); }, 100);
             }
         }
 
-        // Render charts when report tab is opened
-        if (tabName === 'report' && !chartsRendered) {
-            renderAkimCharts();
-            chartsRendered = true;
+        if (tName === 'report' && !chartsOk) {
+            drawCharts();
+            chartsOk = true;
         }
     }
 
-    // INIT LEAFLET MAP
-    function initAkimMap() {
-        const almatyBounds = L.latLngBounds(L.latLng(43.05, 76.70), L.latLng(43.40, 77.15));
-        akimMap = L.map('akimMap', { maxBounds: almatyBounds, minZoom: 11 }).setView([43.2389, 76.8897], 12);
+    function initMap() {
+        const bnds = L.latLngBounds(L.latLng(43.05, 76.70), L.latLng(43.40, 77.15));
+        mapObj = L.map('akimMap', { maxBounds: bnds, minZoom: 11 }).setView([43.2389, 76.8897], 12);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(akimMap);
+        }).addTo(mapObj);
 
-        const complaintsData = {{ complaints | tojson | safe }};
+        const dataList = {{ complaints | tojson | safe }};
 
-        complaintsData.forEach(c => {
+        dataList.forEach(c => {
             if (c.lat && c.lng) {
-                let circleColor = '#94a3b8'; // Default
+                let clr = '#94a3b8'; // дефолт
 
                 if (c.akim_decision === 'Resolved') {
-                    circleColor = '#10b981'; // Green
+                    clr = '#10b981';
                 } else if (c.akim_urgency === 'High') {
-                    circleColor = '#ef4444'; // Red
+                    clr = '#ef4444';
                 } else if (c.akim_urgency === 'Medium' || c.akim_urgency === 'Low') {
-                    circleColor = '#f59e0b'; // Orange
+                    clr = '#f59e0b';
                 }
 
                 L.circle([c.lat, c.lng], {
-                    color: circleColor,
-                    fillColor: circleColor,
+                    color: clr,
+                    fillColor: clr,
                     fillOpacity: 0.6,
                     radius: 70
-                }).addTo(akimMap).bindPopup(`<b>${c.location}</b><br><small>Urgency: ${c.akim_urgency}<br>Status: ${c.akim_decision}</small>`);
+                }).addTo(mapObj).bindPopup(`<b>${c.location}</b><br><small>Urgency: ${c.akim_urgency}<br>Status: ${c.akim_decision}</small>`);
             }
         });
     }
 
-    // INIT CHART.JS CHARTS
-    function renderAkimCharts() {
-        const complaintsData = {{ complaints | tojson | safe }};
+    function drawCharts() {
+        const dataList = {{ complaints | tojson | safe }};
 
-        let uHigh=0, uMed=0, uLow=0, uUnassigned=0;
-        let sWaiting=0, sAccepted=0, sInProgress=0, sResolved=0;
+        let h=0, m=0, l=0, un=0;
+        let sWait=0, sAcc=0, sProg=0, sRes=0;
 
-        complaintsData.forEach(c => {
-            // Urgency
-            if (c.akim_urgency === 'High') uHigh++;
-            else if (c.akim_urgency === 'Medium') uMed++;
-            else if (c.akim_urgency === 'Low') uLow++;
-            else uUnassigned++;
+        dataList.forEach(c => {
+            if (c.akim_urgency === 'High') h++;
+            else if (c.akim_urgency === 'Medium') m++;
+            else if (c.akim_urgency === 'Low') l++;
+            else un++;
 
-            // Status
-            if (c.akim_decision === 'Resolved') sResolved++;
-            else if (c.akim_decision === 'In Progress') sInProgress++;
-            else if (c.akim_decision === 'Accepted' || c.akim_decision === 'Will Fix') sAccepted++;
-            else sWaiting++;
+            if (c.akim_decision === 'Resolved') sRes++;
+            else if (c.akim_decision === 'In Progress') sProg++;
+            else if (c.akim_decision === 'Accepted' || c.akim_decision === 'Will Fix') sAcc++;
+            else sWait++;
         });
 
         Chart.defaults.color = '#8aacc8';
@@ -495,7 +496,7 @@
                 labels: ['High', 'Medium', 'Low', 'Unassigned'],
                 datasets: [{
                     label: 'Reports',
-                    data: [uHigh, uMed, uLow, uUnassigned],
+                    data: [h, m, l, un],
                     backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#94a3b8'],
                     borderRadius: 4
                 }]
@@ -516,7 +517,7 @@
             data: {
                 labels: ['Waiting', 'Accepted', 'In Progress', 'Resolved'],
                 datasets: [{
-                    data: [sWaiting, sAccepted, sInProgress, sResolved],
+                    data: [sWait, sAcc, sProg, sRes],
                     backgroundColor: ['#f59e0b', '#38bdf8', '#8b5cf6', '#10b981'],
                     borderWidth: 0
                 }]
@@ -530,68 +531,66 @@
         });
     }
 
-    function toggleAkimRejectForm(id) {
-        const formContainer = document.getElementById(`akim-reject-container-${id}`);
-        if (formContainer.classList.contains('d-none')) {
-            formContainer.classList.remove('d-none');
+    function toggleReject(id) {
+        const box = document.getElementById(`akim-reject-container-${id}`);
+        if (box.classList.contains('d-none')) {
+            box.classList.remove('d-none');
         } else {
-            formContainer.classList.add('d-none');
+            box.classList.add('d-none');
         }
     }
 
-    function confirmAkimSubmit(form) {
-        const urgencyField = form.querySelector('select[name="urgency"]');
-        const decisionField = form.querySelector('select[name="decision"]');
-        const commentField = form.querySelector('textarea[name="akim_comment"]');
+    function checkSubmit(frm) {
+        const uField = frm.querySelector('select[name="urgency"]');
+        const dField = frm.querySelector('select[name="decision"]');
+        const cField = frm.querySelector('textarea[name="akim_comment"]');
 
-        const urgency = urgencyField ? urgencyField.value : '';
-        const decision = decisionField ? decisionField.value : '';
-        const comment = commentField ? commentField.value.trim() : '';
+        const urg = uField ? uField.value : '';
+        const dec = dField ? dField.value : '';
+        const cmt = cField ? cField.value.trim() : '';
 
-        let message = `Confirm saving this Akimat decision?\n\nUrgency: ${urgency}\nDecision: ${decision}`;
-        if (comment) { message += `\n\nOfficial comment:\n${comment}`; }
+        let msg = `Confirm saving this Akimat decision?\n\nUrgency: ${urg}\nDecision: ${dec}`;
+        if (cmt) msg += `\n\nOfficial comment:\n${cmt}`;
 
-        return window.confirm(message);
+        return window.confirm(msg);
     }
 
-    function confirmCitizenDispatch(form, actorRole) {
-        const feedbackField = form.querySelector('[name="citizen_feedback"]');
-        const resubmitField = form.querySelector('[name="citizen_can_resubmit"]');
-        const feedback = feedbackField ? feedbackField.value.trim() : '';
-        if (!feedback) {
+    function checkDispatch(frm) {
+        const feedField = frm.querySelector('[name="citizen_feedback"]');
+        const resubField = frm.querySelector('[name="citizen_can_resubmit"]');
+        const feed = feedField ? feedField.value.trim() : '';
+        if (!feed) {
             window.alert('Citizen feedback is required.');
             return false;
         }
 
-        const canResubmit = !!(resubmitField && resubmitField.checked);
+        const canResub = !!(resubField && resubField.checked);
         return window.confirm(
-            `Return this report to the citizen?\n\n` +
-            `Resubmission allowed: ${canResubmit ? 'Yes' : 'No'}\n\n` +
-            `${feedback}`
+            `Return this report to the citizen?\n\nResubmission allowed: ${canResub ? 'Yes' : 'No'}\n\n${feed}`
         );
     }
 
-    function openReportDetails(reportId) {
-        const modal = document.getElementById(`report-details-${reportId}`);
-        if (modal) {
-            modal.classList.remove('d-none');
+    function openDetails(id) {
+        const m = document.getElementById(`report-details-${id}`);
+        if (m) {
+            m.classList.remove('d-none');
             document.body.style.overflow = 'hidden';
         }
     }
 
-    function closeReportDetails(event, reportId) {
-        if (event && event.target && !event.target.classList.contains('details-backdrop')) return;
-        const modal = document.getElementById(`report-details-${reportId}`);
-        if (modal) {
-            modal.classList.add('d-none');
+    function closeDetails(e, id) {
+        if (e && e.target && !e.target.classList.contains('details-backdrop')) return;
+        const m = document.getElementById(`report-details-${id}`);
+        if (m) {
+            m.classList.add('d-none');
             document.body.style.overflow = '';
         }
     }
 
-    switchTab(initialAkimTab);
+    changeTab(startTab);
 </script>
 
-<!-- Скрытый движок перевода Google -->
+    <!-- гугл переводчик -->
     <div id="google_translate_element" style="display: none;"></div>
     <script type="text/javascript">
         function googleTranslateElementInit() {
@@ -602,24 +601,20 @@
             }, 'google_translate_element');
         }
 
-        // Функция, которая запоминает язык и перезагружает страницу
         function changeLanguage(lang) {
-            // Очищаем старый выбор
             document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=" + location.hostname + "; path=/;";
 
-            // Если выбран не английский (дефолтный), ставим новый куки
             if (lang !== 'en') {
                 document.cookie = "googtrans=/en/" + lang + "; path=/";
                 document.cookie = "googtrans=/en/" + lang + "; domain=" + location.hostname + "; path=/";
             }
-            // Перезагружаем страницу, чтобы перевод сработал мгновенно
             window.location.reload();
         }
     </script>
     <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
-    <!-- Скрываем весь мусор от Google (верхнюю панель, логотипы и подсветку текста) -->
+    <!-- прячем гугловский мусор -->
     <style>
         .goog-te-banner-frame.skiptranslate { display: none !important; }
         body { top: 0px !important; position: static !important; }

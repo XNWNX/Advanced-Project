@@ -11,6 +11,7 @@
         .logo-text { font-weight: 800; font-size: 1.2rem; color: #fff; }
         .nav-link { color: #8aacc8; border-radius: 8px; margin: 4px 15px; padding: 10px 15px; cursor: pointer; transition: 0.3s; font-size: 0.9rem; }
         .nav-link:hover, .nav-link.active { background-color: #0f3d6a; color: white; font-weight: 600; }
+
         .section-title { font-size: 0.65rem; color: #5a7b9a; margin: 15px 0 5px 20px; text-transform: uppercase; letter-spacing: 1px; }
         .dashboard-card { background-color: #0b2e53; border-radius: 12px; border: 1px solid #143557; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
         .kpi-card { background-color: #0b2e53; border-radius: 12px; border: 1px solid #143557; padding: 20px; display: flex; flex-direction: column; justify-content: center; }
@@ -18,31 +19,28 @@
         .kpi-num.green { color: #10b981; }
         .kpi-num.red { color: #ef4444; }
         .kpi-label { font-size: 0.8rem; color: #8aacc8; margin-top: 5px; }
-        .review-card {
-            background: #0d345d;
-            border: 1px solid #143557;
-            border-radius: 14px;
-            padding: 16px;
-            margin-bottom: 16px;
-            cursor: pointer;
-            transition: 0.2s ease;
-        }
+
+        .review-card { background: #0d345d; border: 1px solid #143557; border-radius: 14px; padding: 16px; margin-bottom: 16px; cursor: pointer; transition: 0.2s ease; }
         .review-card:hover { border-color: #2b6ea4; background: #103a63; }
         .review-meta { color: #8aacc8; font-size: 0.75rem; margin-top: 8px; }
         .info-label { font-size: 0.65rem; color: #5a7b9a; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; display: block; margin-bottom: 4px; }
+
         .ai-analysis-box { background-color: rgba(56, 189, 248, 0.05); border-left: 3px solid #38bdf8; padding: 10px 12px; border-radius: 0 8px 8px 0; }
         .ai-analysis-header { color: #38bdf8; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; font-weight: 800; }
         .form-control { background-color: #061d36; border: 1px solid #143557; color: #f8fbff; border-radius: 8px; font-size: 0.85rem; }
         .form-control:focus { background-color: #092442; border-color: #38bdf8; color: #f8fbff; box-shadow: none; }
         .form-control::placeholder { color: #8aacc8; opacity: 1; }
+
         .btn-approve { background-color: #10b981; border: none; color: #fff; border-radius: 8px; font-size: 0.85rem; font-weight: 700; padding: 9px 16px; transition: 0.2s; }
         .btn-approve:hover { background-color: #059669; }
         .btn-reject { background-color: transparent; border: 1px solid #ef4444; color: #ef4444; border-radius: 8px; font-size: 0.85rem; font-weight: 700; padding: 9px 16px; transition: 0.2s; }
         .btn-reject:hover { background-color: #ef4444; color: #fff; }
+
         .status-badge { border-radius: 999px; padding: 8px 14px; font-size: 0.78rem; font-weight: 700; display: inline-block; }
         .status-pending { border: 1px solid #f59e0b; color: #f59e0b; }
         .status-approved { border: 1px solid #10b981; color: #10b981; }
         .status-rejected { border: 1px solid #ef4444; color: #ef4444; }
+
         .flash-modal-backdrop, .details-backdrop { position: fixed; inset: 0; background: rgba(2, 10, 20, 0.72); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 2000; }
         .flash-modal-card, .details-card { width: min(920px, 100%); background: #0b2e53; border: 1px solid #143557; border-radius: 18px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35); overflow: hidden; }
         .flash-modal-card { max-width: 560px; }
@@ -50,6 +48,7 @@
         .flash-modal-title { font-size: 1.2rem; font-weight: 800; color: #ffffff; margin-bottom: 8px; }
         .flash-modal-text { color: #bfd7ee; line-height: 1.6; margin-bottom: 0; }
         .flash-modal-actions { padding: 0 22px 22px; display: flex; justify-content: flex-end; }
+
         .details-card { max-height: 88vh; overflow-y: auto; }
         .details-body { padding: 24px; }
         .details-image { width: 100%; border-radius: 14px; border: 1px solid #143557; object-fit: cover; max-height: 320px; }
@@ -63,14 +62,14 @@
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
         {% set category, message = messages[-1] %}
-        <div class="flash-modal-backdrop" id="flashModalBackdrop" onclick="closeFlashModal(event)">
+        <div class="flash-modal-backdrop" id="flashModalBackdrop" onclick="closeMsg(event)">
             <div class="flash-modal-card">
                 <div class="flash-modal-header">
                     <div class="flash-modal-title">Moderator update</div>
                     <p class="flash-modal-text">{{ message }}</p>
                 </div>
                 <div class="flash-modal-actions">
-                    <button type="button" class="btn btn-primary" style="background-color: #38bdf8; border: none; color: #031427; font-weight: bold;" onclick="closeFlashModal()">Close</button>
+                    <button type="button" class="btn btn-primary" style="background-color: #38bdf8; border: none; color: #031427; font-weight: bold;" onclick="closeMsg()">Close</button>
                 </div>
             </div>
         </div>
@@ -79,7 +78,7 @@
 
 <div class="container-fluid">
     <div class="row">
-        <!-- SIDEBAR -->
+        <!-- сайдбар -->
         <div class="col-md-3 col-lg-2 sidebar d-flex flex-column px-0 position-fixed" style="width: 18%;">
             <div class="d-flex align-items-center gap-2 px-4 mb-4">
                 <div class="bg-primary text-white rounded p-1" style="line-height: 1;">🛡️</div>
@@ -97,8 +96,8 @@
             </a>
             <a class="nav-link d-flex justify-content-between align-items-center" id="tab-returned" onclick="switchTab('returned')">
                 <span>↩ Returned by Akim</span>
-                {% set returned_total = complaints | selectattr('mod_status', 'equalto', 'Approved') | selectattr('akim_decision', 'equalto', 'Needs Clarification') | list | length %}
-                {% if returned_total > 0 %}<span class="badge bg-warning text-dark rounded-pill">{{ returned_total }}</span>{% endif %}
+                {% set ret_total = complaints | selectattr('mod_status', 'equalto', 'Approved') | selectattr('akim_decision', 'equalto', 'Needs Clarification') | list | length %}
+                {% if ret_total > 0 %}<span class="badge bg-warning text-dark rounded-pill">{{ ret_total }}</span>{% endif %}
             </a>
             <a class="nav-link" id="tab-approved" onclick="switchTab('approved')">✅ Approved</a>
             <a class="nav-link" id="tab-rejected" onclick="switchTab('rejected')">❌ Rejected</a>
@@ -115,7 +114,7 @@
             </div>
         </div>
 
-        <!-- MAIN CONTENT -->
+        <!-- контент -->
         <div class="col-md-9 col-lg-10 offset-md-3 offset-lg-2 p-4" style="margin-left: 18%; width: 82%;">
             <div id="section-overview">
                 <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
@@ -141,17 +140,17 @@
                         <h6 class="mb-0 fw-bold">Priority Queue</h6>
                         <span style="font-size: 0.78rem; color: #8aacc8;">Click a report to inspect details</span>
                     </div>
-                    {% set pending_rows = complaints | selectattr('mod_status', 'equalto', 'Pending') | list %}
-                    {% for row in pending_rows[:4] %}
-                    <div class="review-card" onclick="openReportDetails({{ row['id'] }})">
+                    {% set pending = complaints | selectattr('mod_status', 'equalto', 'Pending') | list %}
+                    {% for item in pending[:4] %}
+                    <div class="review-card" onclick="openDet({{ item['id'] }})">
                         <div class="row g-3 align-items-center">
                             <div class="col-md-1 text-center">
-                                <img src="{{ row['photo_url'] }}" width="72" height="72" class="rounded border border-secondary shadow-sm" style="object-fit: cover;">
+                                <img src="{{ item['photo_url'] }}" width="72" height="72" class="rounded border border-secondary shadow-sm" style="object-fit: cover;">
                             </div>
                             <div class="col-md-7">
-                                <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">{{ row['location'] }}</div>
-                                <div style="font-size: 0.82rem; color: #8aacc8;">{{ row['description'] }}</div>
-                                <div class="review-meta">Submitted: {{ row['created_at'] or 'Date unavailable' }} • {{ row['report_code'] }}</div>
+                                <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">{{ item['location'] }}</div>
+                                <div style="font-size: 0.82rem; color: #8aacc8;">{{ item['description'] }}</div>
+                                <div class="review-meta">Submitted: {{ item['created_at'] or 'Date unavailable' }} • {{ item['report_code'] }}</div>
                             </div>
                             <div class="col-md-2">
                                 <div class="status-badge status-pending">Pending</div>
@@ -167,19 +166,19 @@
                 </div>
             </div>
 
-            <!-- Скрытые вкладки -->
+            <!-- табы (скрытые) -->
             <div id="section-queue" class="d-none">
                 <h4 class="mb-0 fw-bold">Review Queue</h4>
                 <p style="color: #8aacc8; font-size: 0.85rem;" class="mb-4">{{ stats.pending }} complaints pending moderation</p>
                 <div class="dashboard-card">
-                    {% for row in complaints %}{% if row['mod_status'] == 'Pending' %}
-                    <div class="review-card" onclick="openReportDetails({{ row['id'] }})">
+                    {% for c in complaints %}{% if c['mod_status'] == 'Pending' %}
+                    <div class="review-card" onclick="openDet({{ c['id'] }})">
                         <div class="row g-3 align-items-center">
-                            <div class="col-md-1 text-center"><img src="{{ row['photo_url'] }}" width="72" height="72" class="rounded border border-secondary shadow-sm" style="object-fit: cover;"></div>
+                            <div class="col-md-1 text-center"><img src="{{ c['photo_url'] }}" width="72" height="72" class="rounded border border-secondary shadow-sm" style="object-fit: cover;"></div>
                             <div class="col-md-7">
-                                <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">{{ row['location'] }}</div>
-                                <div style="font-size: 0.82rem; color: #8aacc8;">{{ row['description'] }}</div>
-                                <div class="review-meta">{{ row['report_code'] }}</div>
+                                <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">{{ c['location'] }}</div>
+                                <div style="font-size: 0.82rem; color: #8aacc8;">{{ c['description'] }}</div>
+                                <div class="review-meta">{{ c['report_code'] }}</div>
                             </div>
                             <div class="col-md-2"><div class="status-badge status-pending">Pending</div></div>
                             <div class="col-md-2 text-end">
@@ -195,13 +194,13 @@
                 <h4 class="mb-0 fw-bold">Approved Issues</h4>
                 <p style="color: #8aacc8; font-size: 0.85rem;" class="mb-4">Reports already forwarded to Akimat</p>
                 <div class="dashboard-card">
-                    {% for row in complaints %}{% if row['mod_status'] == 'Approved' %}
-                    <div class="review-card" onclick="openReportDetails({{ row['id'] }})">
+                    {% for c in complaints %}{% if c['mod_status'] == 'Approved' %}
+                    <div class="review-card" onclick="openDet({{ c['id'] }})">
                         <div class="row g-3 align-items-center">
-                            <div class="col-md-1 text-center"><img src="{{ row['photo_url'] }}" width="72" height="72" class="rounded border border-secondary shadow-sm" style="object-fit: cover;"></div>
+                            <div class="col-md-1 text-center"><img src="{{ c['photo_url'] }}" width="72" height="72" class="rounded border border-secondary shadow-sm" style="object-fit: cover;"></div>
                             <div class="col-md-8">
-                                <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">{{ row['location'] }}</div>
-                                <div class="review-meta">Akimat status: {{ row['akim_decision'] }}</div>
+                                <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">{{ c['location'] }}</div>
+                                <div class="review-meta">Akimat status: {{ c['akim_decision'] }}</div>
                             </div>
                             <div class="col-md-3 text-end"><div class="status-badge status-approved">Approved</div></div>
                         </div>
@@ -214,15 +213,15 @@
                 <h4 class="mb-0 fw-bold">Returned by Akim</h4>
                 <p style="color: #8aacc8; font-size: 0.85rem;" class="mb-4">Approved reports that need clarification before Akimat can proceed</p>
                 <div class="dashboard-card">
-                    {% set returned_rows = complaints | selectattr('mod_status', 'equalto', 'Approved') | selectattr('akim_decision', 'equalto', 'Needs Clarification') | list %}
-                    {% for row in returned_rows %}
-                    <div class="review-card" onclick="openReportDetails({{ row['id'] }})">
+                    {% set ret_rows = complaints | selectattr('mod_status', 'equalto', 'Approved') | selectattr('akim_decision', 'equalto', 'Needs Clarification') | list %}
+                    {% for r in ret_rows %}
+                    <div class="review-card" onclick="openDet({{ r['id'] }})">
                         <div class="row g-3 align-items-center">
-                            <div class="col-md-1 text-center"><img src="{{ row['photo_url'] }}" width="72" height="72" class="rounded border border-secondary shadow-sm" style="object-fit: cover;"></div>
+                            <div class="col-md-1 text-center"><img src="{{ r['photo_url'] }}" width="72" height="72" class="rounded border border-secondary shadow-sm" style="object-fit: cover;"></div>
                             <div class="col-md-8">
-                                <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">{{ row['location'] }}</div>
-                                <div style="font-size: 0.82rem; color: #8aacc8;">{{ row['description'] }}</div>
-                                <div class="review-meta">Akim request: {{ row['akim_comment'] or 'Clarification requested' }}</div>
+                                <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">{{ r['location'] }}</div>
+                                <div style="font-size: 0.82rem; color: #8aacc8;">{{ r['description'] }}</div>
+                                <div class="review-meta">Akim request: {{ r['akim_comment'] or 'Clarification requested' }}</div>
                             </div>
                             <div class="col-md-3 text-end"><div class="status-badge status-pending">Needs clarification</div></div>
                         </div>
@@ -237,14 +236,14 @@
                 <h4 class="mb-0 fw-bold">Rejected Issues</h4>
                 <p style="color: #8aacc8; font-size: 0.85rem;" class="mb-4">Reports closed during moderation</p>
                 <div class="dashboard-card">
-                    {% for row in complaints %}{% if row['mod_status'] == 'Rejected' %}
-                    <div class="review-card" onclick="openReportDetails({{ row['id'] }})">
+                    {% for c in complaints %}{% if c['mod_status'] == 'Rejected' %}
+                    <div class="review-card" onclick="openDet({{ c['id'] }})">
                         <div class="row g-3 align-items-center">
-                            <div class="col-md-1 text-center"><img src="{{ row['photo_url'] }}" width="72" height="72" class="rounded border border-secondary shadow-sm" style="object-fit: cover;"></div>
+                            <div class="col-md-1 text-center"><img src="{{ c['photo_url'] }}" width="72" height="72" class="rounded border border-secondary shadow-sm" style="object-fit: cover;"></div>
                             <div class="col-md-8">
-                                <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">{{ row['location'] }}</div>
-                                <div style="font-size: 0.82rem; color: #8aacc8;">{{ row['description'] }}</div>
-                                <div class="review-meta">Submitted: {{ row['created_at'] }}</div>
+                                <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">{{ c['location'] }}</div>
+                                <div style="font-size: 0.82rem; color: #8aacc8;">{{ c['description'] }}</div>
+                                <div class="review-meta">Submitted: {{ c['created_at'] }}</div>
                             </div>
                             <div class="col-md-3 text-end"><div class="status-badge status-rejected">Rejected</div></div>
                         </div>
@@ -256,29 +255,29 @@
     </div>
 </div>
 
-<!-- МОДАЛЬНЫЕ ОКНА ДЕТАЛЕЙ ЖАЛОБЫ -->
-{% for row in complaints %}
-<div class="details-backdrop d-none" id="report-details-{{ row['id'] }}" onclick="closeReportDetails(event, {{ row['id'] }})">
+<!-- модалки жалоб -->
+{% for c in complaints %}
+<div class="details-backdrop d-none" id="report-details-{{ c['id'] }}" onclick="closeDet(event, {{ c['id'] }})">
     <div class="details-card">
         <div class="details-header d-flex justify-content-between align-items-start gap-3">
             <div>
-                <h4 class="mb-0 fw-bold">{{ row['location'] }}</h4>
-                <div style="color: #8aacc8; font-size: 0.82rem; margin-top: 6px;">{{ row['report_code'] }} • Submitted {{ row['created_at'] or 'Date unavailable' }}</div>
+                <h4 class="mb-0 fw-bold">{{ c['location'] }}</h4>
+                <div style="color: #8aacc8; font-size: 0.82rem; margin-top: 6px;">{{ c['report_code'] }} • Submitted {{ c['created_at'] or 'Date unavailable' }}</div>
             </div>
-            <button type="button" class="btn btn-secondary" onclick="closeReportDetails(null, {{ row['id'] }})">Close</button>
+            <button type="button" class="btn btn-secondary" onclick="closeDet(null, {{ c['id'] }})">Close</button>
         </div>
         <div class="details-body">
             <div class="row g-4">
-                <div class="col-lg-5"><img src="{{ row['photo_url'] }}" alt="Report photo" class="details-image"></div>
+                <div class="col-lg-5"><img src="{{ c['photo_url'] }}" alt="Report photo" class="details-image"></div>
                 <div class="col-lg-7">
                     <div class="row g-3">
 
-                        {% if row['akim_comment'] %}
-                        <!-- Публичный комментарий Акимата -->
+                        {% if c['akim_comment'] %}
+                        <!-- ответ акимата -->
                         <div class="col-12">
                             <div class="details-panel" style="border: 1px solid #10b981; background: rgba(16, 185, 129, 0.05);">
                                 <div class="details-section-title" style="color: #10b981;">🏛️ Public Akimat Response</div>
-                                <div class="details-text" style="color: #e2e8f0; font-size: 0.95rem;">{{ row['akim_comment'] }}</div>
+                                <div class="details-text" style="color: #e2e8f0; font-size: 0.95rem;">{{ c['akim_comment'] }}</div>
                             </div>
                         </div>
                         {% endif %}
@@ -286,41 +285,41 @@
                         <div class="col-12">
                             <div class="details-panel">
                                 <div class="details-section-title">Citizen Description</div>
-                                <div class="details-text">{{ row['description'] }}</div>
+                                <div class="details-text">{{ c['description'] }}</div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="details-panel">
                                 <div class="details-section-title">AI Analysis</div>
-                                <div class="details-text">{{ row['ai_suggestion'] }}</div>
+                                <div class="details-text">{{ c['ai_suggestion'] }}</div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="details-panel">
                                 <div class="details-section-title">Details & Status</div>
-                                <div class="details-text">Moderator status: {{ row['mod_status'] }}</div>
-                                <div class="details-text mt-2">Akimat status: {{ row['akim_decision'] }}</div>
-                                {% if row['citizen_status'] %}<div class="details-text mt-2">Citizen status: {{ row['citizen_status'] }}</div>{% endif %}
-                                {% if row['lat'] and row['lng'] %}<div class="details-text mt-2">Coords: {{ row['lat'] }}, {{ row['lng'] }}</div>{% endif %}
+                                <div class="details-text">Moderator status: {{ c['mod_status'] }}</div>
+                                <div class="details-text mt-2">Akimat status: {{ c['akim_decision'] }}</div>
+                                {% if c['citizen_status'] %}<div class="details-text mt-2">Citizen status: {{ c['citizen_status'] }}</div>{% endif %}
+                                {% if c['lat'] and c['lng'] %}<div class="details-text mt-2">Coords: {{ c['lat'] }}, {{ c['lng'] }}</div>{% endif %}
                             </div>
                         </div>
 
-                        <!-- БЛОК 1: Единственный бокс для внутренних комментариев -->
+                        <!-- внутренние заметки -->
                         <div class="col-12" onclick="event.stopPropagation()">
                             <div class="details-panel">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <div class="details-section-title mb-0">Internal Staff Notes</div>
                                 </div>
 
-                                {% set report_notes = notes_by_complaint.get(row['id'], []) %}
-                                {% for item in report_notes %}
+                                {% set n_list = notes_by_complaint.get(c['id'], []) %}
+                                {% for n in n_list %}
                                 <div class="details-text mb-2" style="font-size: 0.8rem;">
-                                    <strong style="color: #38bdf8;">{{ item['author_username'] }} ({{ item['author_role'] }})</strong>:
-                                    <span style="color: #bfd7ee;">{{ item['note_text'] }}</span>
+                                    <strong style="color: #38bdf8;">{{ n['author_username'] }} ({{ n['author_role'] }})</strong>:
+                                    <span style="color: #bfd7ee;">{{ n['note_text'] }}</span>
                                 </div>
                                 {% endfor %}
 
-                                <form action="/complaint_note/{{ row['id'] }}" method="POST" class="mt-3">
+                                <form action="/complaint_note/{{ c['id'] }}" method="POST" class="mt-3">
                                     <input type="hidden" name="dashboard" value="moderator">
                                     <input type="hidden" name="active_tab" value="{{ active_tab or 'overview' }}">
                                     <input type="hidden" name="report_query" value="{{ report_query or '' }}">
@@ -332,26 +331,26 @@
                             </div>
                         </div>
 
-                        <!-- БЛОК 2: Главное решение (САМЫЙ НИЗ) -->
-                        {% if row['mod_status'] == 'Pending' or row['akim_decision'] == 'Needs Clarification' %}
+                        <!-- блок решения -->
+                        {% if c['mod_status'] == 'Pending' or c['akim_decision'] == 'Needs Clarification' %}
                         <div class="col-12" onclick="event.stopPropagation()">
                             <div class="details-panel" style="border: 1px solid #38bdf8; background: #0b2e53;">
                                 <div class="details-section-title text-white mb-3">Final Decision</div>
 
-                                <!-- Кнопка Approve (без лишних полей) -->
-                                <form action="/mod_action/{{ row['id'] }}" method="POST" onsubmit="return confirm('Confirm approval of this report?');">
+                                <!-- апрув -->
+                                <form action="/mod_action/{{ c['id'] }}" method="POST" onsubmit="return confirm('Confirm approval of this report?');">
                                     <input type="hidden" name="active_tab" value="{{ active_tab or 'overview' }}">
                                     <input type="hidden" name="report_query" value="{{ report_query or '' }}">
                                     <input type="hidden" name="mod_action" value="Approved">
                                     <button type="submit" class="btn btn-approve w-100 py-2 mb-2" style="font-size: 1rem;">✅ Approve & Forward to Akimat</button>
                                 </form>
 
-                                <!-- Кнопка Reject (открывает скрытую форму) -->
-                                <button type="button" class="btn btn-reject w-100 py-2" style="font-size: 1rem;" onclick="toggleRejectForm({{ row['id'] }})">❌ Reject / Return to Citizen</button>
+                                <!-- реджект -->
+                                <button type="button" class="btn btn-reject w-100 py-2" style="font-size: 1rem;" onclick="toggleRej({{ c['id'] }})">❌ Reject / Return to Citizen</button>
 
-                                <!-- Скрытая форма причины отказа -->
-                                <div id="reject-form-container-{{ row['id'] }}" class="d-none mt-3 pt-3" style="border-top: 1px solid #143557;">
-                                    <form action="/mod_citizen_action/{{ row['id'] }}" method="POST" onsubmit="return confirmCitizenDispatch(this, 'moderator')">
+                                <!-- форма отказа -->
+                                <div id="reject-form-container-{{ c['id'] }}" class="d-none mt-3 pt-3" style="border-top: 1px solid #143557;">
+                                    <form action="/mod_citizen_action/{{ c['id'] }}" method="POST" onsubmit="return checkDispatch(this)">
                                         <input type="hidden" name="active_tab" value="{{ active_tab or 'overview' }}">
                                         <input type="hidden" name="report_query" value="{{ report_query or '' }}">
 
@@ -359,14 +358,14 @@
                                         <textarea name="citizen_feedback" class="form-control mb-3" rows="3" placeholder="Explain why the report is rejected or what needs to be fixed..." required></textarea>
 
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" value="1" id="citizen-resubmit-{{ row['id'] }}" name="citizen_can_resubmit" checked>
-                                            <label class="form-check-label" for="citizen-resubmit-{{ row['id'] }}" style="color: #e2e8f0; font-size: 0.85rem;">
+                                            <input class="form-check-input" type="checkbox" value="1" id="cit-resubmit-{{ c['id'] }}" name="citizen_can_resubmit" checked>
+                                            <label class="form-check-label" for="cit-resubmit-{{ c['id'] }}" style="color: #e2e8f0; font-size: 0.85rem;">
                                                 Allow the citizen to fix and resubmit this report
                                             </label>
                                         </div>
 
                                         <div class="d-flex gap-2 justify-content-end">
-                                            <button type="button" class="btn btn-secondary px-4" onclick="toggleRejectForm({{ row['id'] }})">Cancel</button>
+                                            <button type="button" class="btn btn-secondary px-4" onclick="toggleRej({{ c['id'] }})">Cancel</button>
                                             <button type="submit" class="btn" style="background-color: #ef4444; color: white; font-weight: bold;">Confirm Rejection</button>
                                         </div>
                                     </form>
@@ -384,74 +383,72 @@
 {% endfor %}
 
 <script>
-    const initialModeratorTab = {{ (active_tab or 'overview') | tojson }};
+    const initTab = {{ (active_tab or 'overview') | tojson }};
 
-    function closeFlashModal(event) {
-        if (event && event.target && event.target.id !== 'flashModalBackdrop') return;
+    function closeMsg(e) {
+        if (e && e.target && e.target.id !== 'flashModalBackdrop') return;
         const modal = document.getElementById('flashModalBackdrop');
         if (modal) modal.remove();
     }
 
-    function switchTab(tabName) {
-        const sections = ['overview', 'queue', 'returned', 'approved', 'rejected'];
-        sections.forEach(sec => {
+    function switchTab(tName) {
+        const arr = ['overview', 'queue', 'returned', 'approved', 'rejected'];
+        arr.forEach(sec => {
             document.getElementById('section-' + sec).classList.add('d-none');
             document.getElementById('tab-' + sec).classList.remove('active');
         });
-        document.getElementById('section-' + tabName).classList.remove('d-none');
-        document.getElementById('tab-' + tabName).classList.add('active');
-        document.querySelectorAll('input[name="active_tab"]').forEach(input => {
-            input.value = tabName;
+        document.getElementById('section-' + tName).classList.remove('d-none');
+        document.getElementById('tab-' + tName).classList.add('active');
+        document.querySelectorAll('input[name="active_tab"]').forEach(inp => {
+            inp.value = tName;
         });
     }
 
-    function toggleRejectForm(id) {
-        const formContainer = document.getElementById(`reject-form-container-${id}`);
-        if (formContainer.classList.contains('d-none')) {
-            formContainer.classList.remove('d-none');
+    function toggleRej(id) {
+        const box = document.getElementById(`reject-form-container-${id}`);
+        if (box.classList.contains('d-none')) {
+            box.classList.remove('d-none');
         } else {
-            formContainer.classList.add('d-none');
+            box.classList.add('d-none');
         }
     }
 
-    function confirmCitizenDispatch(form, actorRole) {
-        const feedbackField = form.querySelector('[name="citizen_feedback"]');
-        const resubmitField = form.querySelector('[name="citizen_can_resubmit"]');
-        const feedback = feedbackField ? feedbackField.value.trim() : '';
-        if (!feedback) {
+    function checkDispatch(frm) {
+        const fbField = frm.querySelector('[name="citizen_feedback"]');
+        const resField = frm.querySelector('[name="citizen_can_resubmit"]');
+        const fb = fbField ? fbField.value.trim() : '';
+
+        if (!fb) {
             window.alert('Citizen feedback is required.');
             return false;
         }
 
-        const canResubmit = !!(resubmitField && resubmitField.checked);
+        const canRes = !!(resField && resField.checked);
         return window.confirm(
-            `Reject this report and send message to citizen?\n\n` +
-            `Resubmission allowed: ${canResubmit ? 'Yes' : 'No'}\n\n` +
-            `${feedback}`
+            `Reject this report and send message to citizen?\n\nResubmission allowed: ${canRes ? 'Yes' : 'No'}\n\n${fb}`
         );
     }
 
-    function openReportDetails(reportId) {
-        const modal = document.getElementById(`report-details-${reportId}`);
-        if (modal) {
-            modal.classList.remove('d-none');
+    function openDet(id) {
+        const m = document.getElementById(`report-details-${id}`);
+        if (m) {
+            m.classList.remove('d-none');
             document.body.style.overflow = 'hidden';
         }
     }
 
-    function closeReportDetails(event, reportId) {
-        if (event && event.target && !event.target.classList.contains('details-backdrop')) return;
-        const modal = document.getElementById(`report-details-${reportId}`);
-        if (modal) {
-            modal.classList.add('d-none');
+    function closeDet(e, id) {
+        if (e && e.target && !e.target.classList.contains('details-backdrop')) return;
+        const m = document.getElementById(`report-details-${id}`);
+        if (m) {
+            m.classList.add('d-none');
             document.body.style.overflow = '';
         }
     }
 
-    switchTab(initialModeratorTab);
+    switchTab(initTab);
 </script>
 
-<!-- Скрытый движок перевода Google -->
     <div id="google_translate_element" style="display: none;"></div>
     <script type="text/javascript">
         function googleTranslateElementInit() {
@@ -462,24 +459,19 @@
             }, 'google_translate_element');
         }
 
-        // Функция, которая запоминает язык и перезагружает страницу
         function changeLanguage(lang) {
-            // Очищаем старый выбор
             document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=" + location.hostname + "; path=/;";
 
-            // Если выбран не английский (дефолтный), ставим новый куки
             if (lang !== 'en') {
                 document.cookie = "googtrans=/en/" + lang + "; path=/";
                 document.cookie = "googtrans=/en/" + lang + "; domain=" + location.hostname + "; path=/";
             }
-            // Перезагружаем страницу, чтобы перевод сработал мгновенно
             window.location.reload();
         }
     </script>
     <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
-    <!-- Скрываем весь мусор от Google (верхнюю панель, логотипы и подсветку текста) -->
     <style>
         .goog-te-banner-frame.skiptranslate { display: none !important; }
         body { top: 0px !important; position: static !important; }

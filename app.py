@@ -12,7 +12,7 @@ from google import genai
 from PIL import Image
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from dotenv import load_dotenv # ВОЗВРАЩАЕМ ЧТЕНИЕ .env
+from dotenv import load_dotenv
 
 try:
     import boto3
@@ -21,36 +21,36 @@ except ImportError:
     boto3 = None
     BotoConfig = None
 
-load_dotenv() # Загружаем скрытый ключ
+load_dotenv()
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.secret_key = 'some_random_secret_string_for_sessions'
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=5) # Сессия умрет через 30 минут
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=5)  # сессия на 5 минут
 
-# БЕРЕМ КЛЮЧ ИЗ .env, ЧТОБЫ ИИ СНОВА ЗАРАБОТАЛ!
+# ключ для gemini из .env
 API_KEY = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=API_KEY)
 
-OBJECT_STORAGE_ENABLED = os.getenv("OBJECT_STORAGE_ENABLED", "").lower() in {"1", "true", "yes", "on"}
-OBJECT_STORAGE_BUCKET = os.getenv("OBJECT_STORAGE_BUCKET", "").strip()
-OBJECT_STORAGE_ENDPOINT = os.getenv("OBJECT_STORAGE_ENDPOINT", "").strip()
-OBJECT_STORAGE_REGION = os.getenv("OBJECT_STORAGE_REGION", "us-east-1").strip() or "us-east-1"
-OBJECT_STORAGE_ACCESS_KEY = os.getenv("OBJECT_STORAGE_ACCESS_KEY", "").strip()
-OBJECT_STORAGE_SECRET_KEY = os.getenv("OBJECT_STORAGE_SECRET_KEY", "").strip()
-OBJECT_STORAGE_PUBLIC_BASE_URL = os.getenv("OBJECT_STORAGE_PUBLIC_BASE_URL", "").strip().rstrip("/")
-OBJECT_STORAGE_SECURE = os.getenv("OBJECT_STORAGE_SECURE", "true").lower() in {"1", "true", "yes", "on"}
-OBJECT_STORAGE_AUTO_CREATE_BUCKET = os.getenv("OBJECT_STORAGE_AUTO_CREATE_BUCKET", "true").lower() in {"1", "true", "yes", "on"}
+S3_ENABLED = os.getenv("OBJECT_STORAGE_ENABLED", "").lower() in {"1", "true", "yes", "on"}
+S3_BUCKET = os.getenv("OBJECT_STORAGE_BUCKET", "").strip()
+S3_ENDPOINT = os.getenv("OBJECT_STORAGE_ENDPOINT", "").strip()
+S3_REGION = os.getenv("OBJECT_STORAGE_REGION", "us-east-1").strip() or "us-east-1"
+S3_ACCESS_KEY = os.getenv("OBJECT_STORAGE_ACCESS_KEY", "").strip()
+S3_SECRET_KEY = os.getenv("OBJECT_STORAGE_SECRET_KEY", "").strip()
+S3_PUBLIC_URL = os.getenv("OBJECT_STORAGE_PUBLIC_BASE_URL", "").strip().rstrip("/")
+S3_USE_SSL = os.getenv("OBJECT_STORAGE_SECURE", "true").lower() in {"1", "true", "yes", "on"}
+S3_AUTOCREATE = os.getenv("OBJECT_STORAGE_AUTO_CREATE_BUCKET", "true").lower() in {"1", "true", "yes", "on"}
 
 
 def object_storage_is_configured():
     return all([
-        OBJECT_STORAGE_ENABLED,
+        S3_ENABLED,
         boto3 is not None,
-        OBJECT_STORAGE_BUCKET,
-        OBJECT_STORAGE_ENDPOINT,
-        OBJECT_STORAGE_ACCESS_KEY,
-        OBJECT_STORAGE_SECRET_KEY
+        S3_BUCKET,
+        S3_ENDPOINT,
+        S3_ACCESS_KEY,
+        S3_SECRET_KEY
     ])
 
 
@@ -59,32 +59,32 @@ def get_object_storage_client():
         return None
     return boto3.client(
         "s3",
-        endpoint_url=OBJECT_STORAGE_ENDPOINT,
-        region_name=OBJECT_STORAGE_REGION,
-        aws_access_key_id=OBJECT_STORAGE_ACCESS_KEY,
-        aws_secret_access_key=OBJECT_STORAGE_SECRET_KEY,
-        use_ssl=OBJECT_STORAGE_SECURE,
+        endpoint_url=S3_ENDPOINT,
+        region_name=S3_REGION,
+        aws_access_key_id=S3_ACCESS_KEY,
+        aws_secret_access_key=S3_SECRET_KEY,
+        use_ssl=S3_USE_SSL,
         config=BotoConfig(signature_version="s3v4", s3={"addressing_style": "path"}) if BotoConfig else None
     )
 
 
 def ensure_object_storage_bucket():
-    client_instance = get_object_storage_client()
-    if not client_instance:
+    s3 = get_object_storage_client()
+    if not s3:
         return False
     try:
-        client_instance.head_bucket(Bucket=OBJECT_STORAGE_BUCKET)
+        s3.head_bucket(Bucket=S3_BUCKET)
         return True
     except Exception:
-        if not OBJECT_STORAGE_AUTO_CREATE_BUCKET:
+        if not S3_AUTOCREATE:
             return False
         try:
-            if OBJECT_STORAGE_REGION == "us-east-1":
-                client_instance.create_bucket(Bucket=OBJECT_STORAGE_BUCKET)
+            if S3_REGION == "us-east-1":
+                s3.create_bucket(Bucket=S3_BUCKET)
             else:
-                client_instance.create_bucket(
-                    Bucket=OBJECT_STORAGE_BUCKET,
-                    CreateBucketConfiguration={"LocationConstraint": OBJECT_STORAGE_REGION}
+                s3.create_bucket(
+                    Bucket=S3_BUCKET,
+                    CreateBucketConfiguration={"LocationConstraint": S3_REGION}
                 )
             return True
         except Exception as exc:
@@ -92,258 +92,179 @@ def ensure_object_storage_bucket():
             return False
 
 
-def generate_storage_name(original_filename):
-    safe_name = secure_filename(original_filename or "upload.jpg")
+def generate_storage_name(orig_fname):
+    safe_name = secure_filename(orig_fname or "upload.jpg")
     _, ext = os.path.splitext(safe_name)
     ext = ext.lower() if ext else ".jpg"
     return f"reports/{datetime.now().strftime('%Y/%m')}/{uuid.uuid4().hex}{ext}"
 
 
-def guess_content_type(filename):
-    content_type, _ = mimetypes.guess_type(filename or "")
-    return content_type or "application/octet-stream"
+def guess_content_type(fname):
+    ctype, _ = mimetypes.guess_type(fname or "")
+    return ctype or "application/octet-stream"
 
 
-def save_photo_bytes(photo_bytes, original_filename):
-    storage_key = generate_storage_name(original_filename)
+def save_photo_bytes(photo_bytes, orig_fname):
+    storage_key = generate_storage_name(orig_fname)
     if object_storage_is_configured() and ensure_object_storage_bucket():
-        client_instance = get_object_storage_client()
+        s3 = get_object_storage_client()
         try:
-            client_instance.put_object(
-                Bucket=OBJECT_STORAGE_BUCKET,
+            s3.put_object(
+                Bucket=S3_BUCKET,
                 Key=storage_key,
                 Body=photo_bytes,
-                ContentType=guess_content_type(original_filename)
+                ContentType=guess_content_type(orig_fname)
             )
             return storage_key, "object"
         except Exception as exc:
             print(f"Object storage upload failed, falling back to local file storage: {exc}")
 
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    local_filename = os.path.basename(storage_key)
-    local_path = os.path.join(app.config['UPLOAD_FOLDER'], local_filename)
-    with open(local_path, "wb") as local_file:
-        local_file.write(photo_bytes)
-    return local_filename, "local"
+    local_fname = os.path.basename(storage_key)
+    local_path = os.path.join(app.config['UPLOAD_FOLDER'], local_fname)
+    with open(local_path, "wb") as f:
+        f.write(photo_bytes)
+    return local_fname, "local"
 
 
-def read_photo_bytes(storage_key, storage_backend):
-    if storage_backend == "object" and object_storage_is_configured():
-        client_instance = get_object_storage_client()
+def read_photo_bytes(storage_key, backend):
+    if backend == "object" and object_storage_is_configured():
+        s3 = get_object_storage_client()
         try:
-            response = client_instance.get_object(Bucket=OBJECT_STORAGE_BUCKET, Key=storage_key)
-            return response["Body"].read()
+            resp = s3.get_object(Bucket=S3_BUCKET, Key=storage_key)
+            return resp["Body"].read()
         except Exception as exc:
             print(f"Object storage read failed for {storage_key}: {exc}")
             return None
 
     local_path = os.path.join(app.config['UPLOAD_FOLDER'], storage_key)
     if os.path.exists(local_path):
-        with open(local_path, "rb") as local_file:
-            return local_file.read()
+        with open(local_path, "rb") as f:
+            return f.read()
     return None
 
 
-def build_photo_url(storage_key, storage_backend):
+def build_photo_url(storage_key, backend):
     if not storage_key:
         return ""
-    if storage_backend == "object":
-        if OBJECT_STORAGE_PUBLIC_BASE_URL:
-            return f"{OBJECT_STORAGE_PUBLIC_BASE_URL}/{storage_key}"
+    if backend == "object":
+        if S3_PUBLIC_URL:
+            return f"{S3_PUBLIC_URL}/{storage_key}"
         return url_for("photo_proxy", storage_key=storage_key)
     return f"/static/uploads/{storage_key}"
 
 
 def attach_photo_urls(complaints):
-    for complaint in complaints:
-        backend = complaint.get("photo_storage_backend") or "local"
-        complaint["photo_storage_backend"] = backend
-        complaint["photo_url"] = build_photo_url(complaint.get("photo_filename", ""), backend)
+    for c in complaints:
+        bk = c.get("photo_storage_backend") or "local"
+        c["photo_storage_backend"] = bk
+        c["photo_url"] = build_photo_url(c.get("photo_filename", ""), bk)
     return complaints
 
 
-def build_report_code(complaint_id):
+def build_report_code(cid):
     try:
-        return f"SC-{int(complaint_id):06d}"
+        return f"SC-{int(cid):06d}"
     except (TypeError, ValueError):
         return "SC-UNKNOWN"
 
 
 def attach_report_codes(complaints):
-    for complaint in complaints:
-        complaint["report_code"] = build_report_code(complaint.get("id"))
+    for c in complaints:
+        c["report_code"] = build_report_code(c.get("id"))
     return complaints
 
 
 def filter_complaints_by_report_query(complaints, query):
-    normalized_query = (query or "").strip().upper()
-    if not normalized_query:
+    q = (query or "").strip().upper()
+    if not q:
         return complaints
 
-    digits_only = "".join(ch for ch in normalized_query if ch.isdigit())
-    filtered = []
-    for complaint in complaints:
-        report_code = complaint.get("report_code") or build_report_code(complaint.get("id"))
-        matches_code = normalized_query in report_code.upper()
-        matches_id = digits_only and str(complaint.get("id")) == digits_only
+    digits_only = "".join(ch for ch in q if ch.isdigit())
+    res = []
+    for c in complaints:
+        code = c.get("report_code") or build_report_code(c.get("id"))
+        matches_code = q in code.upper()
+        matches_id = digits_only and str(c.get("id")) == digits_only
         if matches_code or matches_id:
-            filtered.append(complaint)
-    return filtered
+            res.append(c)
+    return res
 
 
 def init_db():
     conn = sqlite3.connect('smart_city.db')
     cursor = conn.cursor()
-    # ДОБАВЛЕНО: user_id, location, lat, lng
+
     cursor.execute('''
-                   CREATE TABLE IF NOT EXISTS complaints
-                   (
-                       id
-                       INTEGER
-                       PRIMARY
-                       KEY
-                       AUTOINCREMENT,
-                       user_id
-                       INTEGER
-                       NOT
-                       NULL,
-                       location
-                       TEXT
-                       NOT
-                       NULL,
-                       lat
-                       REAL,
-                       lng
-                       REAL,
-                       description
-                       TEXT
-                       NOT
-                       NULL,
-                       photo_filename
-                       TEXT
-                       NOT
-                       NULL,
-                       ai_suggestion
-                       TEXT,
-                       mod_status
-                       TEXT
-                       DEFAULT
-                       'Pending',
-                       akim_urgency
-                       TEXT
-                       DEFAULT
-                       'Unassigned',
-                       akim_decision
-                       TEXT
-                       DEFAULT
-                       'Waiting for Akimat'
-                   )
-                   ''')
+        CREATE TABLE IF NOT EXISTS complaints (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            location TEXT NOT NULL,
+            lat REAL,
+            lng REAL,
+            description TEXT NOT NULL,
+            photo_filename TEXT NOT NULL,
+            ai_suggestion TEXT,
+            mod_status TEXT DEFAULT 'Pending',
+            akim_urgency TEXT DEFAULT 'Unassigned',
+            akim_decision TEXT DEFAULT 'Waiting for Akimat'
+        )
+    ''')
+
     cursor.execute('''
-                   CREATE TABLE IF NOT EXISTS complaint_history
-                   (
-                       id
-                       INTEGER
-                       PRIMARY
-                       KEY
-                       AUTOINCREMENT,
-                       complaint_id
-                       INTEGER
-                       NOT
-                       NULL,
-                       actor_role
-                       TEXT
-                       NOT
-                       NULL,
-                       actor_username
-                       TEXT
-                       NOT
-                       NULL,
-                       action
-                       TEXT
-                       NOT
-                       NULL,
-                       note
-                       TEXT,
-                       created_at
-                       TEXT
-                       NOT
-                       NULL
-                   )
-                   ''')
+        CREATE TABLE IF NOT EXISTS complaint_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            complaint_id INTEGER NOT NULL,
+            actor_role TEXT NOT NULL,
+            actor_username TEXT NOT NULL,
+            action TEXT NOT NULL,
+            note TEXT,
+            created_at TEXT NOT NULL
+        )
+    ''')
+
     cursor.execute('''
-                   CREATE TABLE IF NOT EXISTS complaint_notes
-                   (
-                       id
-                       INTEGER
-                       PRIMARY
-                       KEY
-                       AUTOINCREMENT,
-                       complaint_id
-                       INTEGER
-                       NOT
-                       NULL,
-                       author_role
-                       TEXT
-                       NOT
-                       NULL,
-                       author_username
-                       TEXT
-                       NOT
-                       NULL,
-                       note_text
-                       TEXT
-                       NOT
-                       NULL,
-                       created_at
-                       TEXT
-                       NOT
-                       NULL
-                   )
-                   ''')
+        CREATE TABLE IF NOT EXISTS complaint_notes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            complaint_id INTEGER NOT NULL,
+            author_role TEXT NOT NULL,
+            author_username TEXT NOT NULL,
+            note_text TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+    ''')
+
     cursor.execute('''
-                   CREATE TABLE IF NOT EXISTS users
-                   (
-                       id
-                       INTEGER
-                       PRIMARY
-                       KEY
-                       AUTOINCREMENT,
-                       username
-                       TEXT
-                       UNIQUE
-                       NOT
-                       NULL,
-                       password
-                       TEXT
-                       NOT
-                       NULL,
-                       role
-                       TEXT
-                       NOT
-                       NULL
-                   )
-                   ''')
-    columns = {row[1] for row in cursor.execute("PRAGMA table_info(complaints)").fetchall()}
-    if 'created_at' not in columns:
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            role TEXT NOT NULL
+        )
+    ''')
+
+    # добавляем колонки если их нет (миграция на лету)
+    cols = {row[1] for row in cursor.execute("PRAGMA table_info(complaints)").fetchall()}
+    if 'created_at' not in cols:
         cursor.execute("ALTER TABLE complaints ADD COLUMN created_at TEXT")
         cursor.execute("UPDATE complaints SET created_at = datetime('now') WHERE created_at IS NULL OR created_at = ''")
-    if 'moderator_comment' not in columns:
+    if 'moderator_comment' not in cols:
         cursor.execute("ALTER TABLE complaints ADD COLUMN moderator_comment TEXT DEFAULT ''")
-    if 'reject_reason' not in columns:
+    if 'reject_reason' not in cols:
         cursor.execute("ALTER TABLE complaints ADD COLUMN reject_reason TEXT DEFAULT ''")
-    if 'akim_comment' not in columns:
+    if 'akim_comment' not in cols:
         cursor.execute("ALTER TABLE complaints ADD COLUMN akim_comment TEXT DEFAULT ''")
-    if 'photo_storage_backend' not in columns:
+    if 'photo_storage_backend' not in cols:
         cursor.execute("ALTER TABLE complaints ADD COLUMN photo_storage_backend TEXT DEFAULT 'local'")
-    if 'citizen_status' not in columns:
+    if 'citizen_status' not in cols:
         cursor.execute("ALTER TABLE complaints ADD COLUMN citizen_status TEXT DEFAULT ''")
-    if 'citizen_feedback' not in columns:
+    if 'citizen_feedback' not in cols:
         cursor.execute("ALTER TABLE complaints ADD COLUMN citizen_feedback TEXT DEFAULT ''")
-    if 'citizen_can_resubmit' not in columns:
+    if 'citizen_can_resubmit' not in cols:
         cursor.execute("ALTER TABLE complaints ADD COLUMN citizen_can_resubmit INTEGER DEFAULT 0")
-    if 'revision_count' not in columns:
+    if 'revision_count' not in cols:
         cursor.execute("ALTER TABLE complaints ADD COLUMN revision_count INTEGER DEFAULT 0")
+
     cursor.execute("UPDATE complaints SET photo_storage_backend = 'local' WHERE photo_storage_backend IS NULL OR photo_storage_backend = ''")
     cursor.execute("UPDATE complaints SET akim_decision = 'Accepted' WHERE akim_decision = 'Will Fix'")
     conn.commit()
@@ -355,42 +276,42 @@ init_db()
 
 @app.route('/photo/<path:storage_key>')
 def photo_proxy(storage_key):
-    photo_bytes = read_photo_bytes(storage_key, "object")
-    if not photo_bytes:
+    data = read_photo_bytes(storage_key, "object")
+    if not data:
         return "", 404
-    return app.response_class(photo_bytes, mimetype=guess_content_type(storage_key))
+    return app.response_class(data, mimetype=guess_content_type(storage_key))
 
 
-def get_complaint_category(complaint):
-    if complaint['mod_status'] == 'Rejected':
+def get_complaint_category(c):
+    if c['mod_status'] == 'Rejected':
         return 'rejected'
-    if complaint['mod_status'] == 'Pending':
+    if c['mod_status'] == 'Pending':
         return 'pending'
-    if complaint['mod_status'] == 'Approved':
+    if c['mod_status'] == 'Approved':
         return 'approved'
     return 'other'
 
 
-def get_chart_status(complaint):
-    if complaint.get('citizen_status') == 'Action Required':
+def get_chart_status(c):
+    if c.get('citizen_status') == 'Action Required':
         return 'pending'
-    if complaint['mod_status'] == 'Rejected':
+    if c['mod_status'] == 'Rejected':
         return 'rejected'
-    if complaint['akim_decision'] == 'Resolved':
+    if c['akim_decision'] == 'Resolved':
         return 'resolved'
-    if complaint['mod_status'] == 'Approved':
+    if c['mod_status'] == 'Approved':
         return 'approved'
-    if complaint['mod_status'] == 'Pending':
+    if c['mod_status'] == 'Pending':
         return 'pending'
     return 'other'
 
 
-def parse_created_at(value):
-    if not value:
+def parse_created_at(val):
+    if not val:
         return datetime.now()
     for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
         try:
-            return datetime.strptime(value, fmt)
+            return datetime.strptime(val, fmt)
         except ValueError:
             continue
     return datetime.now()
@@ -399,18 +320,18 @@ def parse_created_at(value):
 def build_monthly_stats(complaints, months=6):
     now = datetime.now()
     month_starts = []
-    current = datetime(now.year, now.month, 1)
+    cur_month = datetime(now.year, now.month, 1)
 
     for _ in range(months):
-        month_starts.append(current)
-        if current.month == 1:
-            current = datetime(current.year - 1, 12, 1)
+        month_starts.append(cur_month)
+        if cur_month.month == 1:
+            cur_month = datetime(cur_month.year - 1, 12, 1)
         else:
-            current = datetime(current.year, current.month - 1, 1)
+            cur_month = datetime(cur_month.year, cur_month.month - 1, 1)
 
     month_starts.reverse()
-    labels = [month.strftime("%B %Y") for month in month_starts]
-    keys = [month.strftime("%Y-%m") for month in month_starts]
+    labels = [m.strftime("%B %Y") for m in month_starts]
+    keys = [m.strftime("%Y-%m") for m in month_starts]
     stats = {
         'labels': labels,
         'pending': [0] * len(keys),
@@ -418,36 +339,35 @@ def build_monthly_stats(complaints, months=6):
         'rejected': [0] * len(keys),
         'resolved': [0] * len(keys)
     }
-    index_by_key = {key: idx for idx, key in enumerate(keys)}
+    idx_map = {key: idx for idx, key in enumerate(keys)}
 
-    for complaint in complaints:
-        created_at = parse_created_at(complaint.get('created_at'))
+    for c in complaints:
+        created_at = parse_created_at(c.get('created_at'))
         month_key = created_at.strftime("%Y-%m")
-        if month_key not in index_by_key:
+        if month_key not in idx_map:
             continue
-
-        status_key = get_chart_status(complaint)
+        status_key = get_chart_status(c)
         if status_key in stats:
-            stats[status_key][index_by_key[month_key]] += 1
+            stats[status_key][idx_map[month_key]] += 1
 
     return stats
 
 
-def normalize_text(value):
-    if not value:
+def normalize_text(val):
+    if not val:
         return ""
-    value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii").lower()
-    value = re.sub(r"[^a-z0-9\s]", " ", value)
-    value = re.sub(r"\s+", " ", value).strip()
-    return value
+    val = unicodedata.normalize("NFKD", val).encode("ascii", "ignore").decode("ascii").lower()
+    val = re.sub(r"[^a-z0-9\s]", " ", val)
+    val = re.sub(r"\s+", " ", val).strip()
+    return val
 
 
-def token_similarity(text_a, text_b):
-    tokens_a = set(normalize_text(text_a).split())
-    tokens_b = set(normalize_text(text_b).split())
-    if not tokens_a or not tokens_b:
+def token_similarity(txt_a, txt_b):
+    tok_a = set(normalize_text(txt_a).split())
+    tok_b = set(normalize_text(txt_b).split())
+    if not tok_a or not tok_b:
         return 0.0
-    return len(tokens_a & tokens_b) / len(tokens_a | tokens_b)
+    return len(tok_a & tok_b) / len(tok_a | tok_b)
 
 
 def distance_meters(lat1, lng1, lat2, lng2):
@@ -478,10 +398,9 @@ def find_likely_duplicate(location, description, lat, lng, active_issues):
     best_score = -1
 
     for issue in active_issues:
-        score = score_duplicate_candidate(location, description, lat, lng, issue)
-
-        if score > best_score:
-            best_score = score
+        sc = score_duplicate_candidate(location, description, lat, lng, issue)
+        if sc > best_score:
+            best_score = sc
             best_match = issue
 
     if best_match and best_score >= 7:
@@ -491,36 +410,36 @@ def find_likely_duplicate(location, description, lat, lng, active_issues):
 
 def score_duplicate_candidate(location, description, lat, lng, issue):
     score = 0
-    issue_distance = distance_meters(lat, lng, issue.get('lat'), issue.get('lng'))
-    desc_similarity = token_similarity(description, issue.get('description'))
-    loc_similarity = token_similarity(location, issue.get('location'))
+    dist = distance_meters(lat, lng, issue.get('lat'), issue.get('lng'))
+    desc_sim = token_similarity(description, issue.get('description'))
+    loc_sim = token_similarity(location, issue.get('location'))
 
-    if issue_distance is not None:
-        if issue_distance <= 60:
+    if dist is not None:
+        if dist <= 60:
             score += 6
-        elif issue_distance <= 120:
+        elif dist <= 120:
             score += 5
-        elif issue_distance <= 200:
+        elif dist <= 200:
             score += 4
-        elif issue_distance <= 350:
+        elif dist <= 350:
             score += 2
 
-    if desc_similarity >= 0.7:
+    if desc_sim >= 0.7:
         score += 5
-    elif desc_similarity >= 0.45:
+    elif desc_sim >= 0.45:
         score += 3
-    elif desc_similarity >= 0.25:
+    elif desc_sim >= 0.25:
         score += 1
 
-    if loc_similarity >= 0.7:
+    if loc_sim >= 0.7:
         score += 4
-    elif loc_similarity >= 0.45:
+    elif loc_sim >= 0.45:
         score += 2
-    elif loc_similarity >= 0.25:
+    elif loc_sim >= 0.25:
         score += 1
 
-    same_text_area = desc_similarity >= 0.45 and loc_similarity >= 0.25
-    nearby_same_issue = issue_distance is not None and issue_distance <= 150 and (desc_similarity >= 0.25 or loc_similarity >= 0.25)
+    same_text_area = desc_sim >= 0.45 and loc_sim >= 0.25
+    nearby_same_issue = dist is not None and dist <= 150 and (desc_sim >= 0.25 or loc_sim >= 0.25)
 
     if same_text_area or nearby_same_issue:
         score += 2
@@ -538,23 +457,23 @@ def get_duplicate_candidates(location, description, lat, lng, active_issues, lim
 
     scored = []
     for issue in active_issues:
-        score = score_duplicate_candidate(location, description, lat, lng, issue)
-        scored.append((score, issue))
+        sc = score_duplicate_candidate(location, description, lat, lng, issue)
+        scored.append((sc, issue))
 
     scored.sort(key=lambda item: item[0], reverse=True)
-    return [issue for score, issue in scored if score > 0][:limit]
+    return [issue for sc, issue in scored if sc > 0][:limit]
 
 
-def add_history_entry(cursor, complaint_id, actor_role, actor_username, action, note=""):
+def add_history_entry(cursor, cid, actor_role, actor_uname, action, note=""):
     cursor.execute(
         '''
         INSERT INTO complaint_history (complaint_id, actor_role, actor_username, action, note, created_at)
         VALUES (?, ?, ?, ?, ?, ?)
         ''',
         (
-            complaint_id,
+            cid,
             actor_role,
-            actor_username,
+            actor_uname,
             action,
             note,
             datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -562,11 +481,10 @@ def add_history_entry(cursor, complaint_id, actor_role, actor_username, action, 
     )
 
 
-def get_history_map(cursor, complaint_ids):
-    if not complaint_ids:
+def get_history_map(cursor, ids):
+    if not ids:
         return {}
-
-    placeholders = ",".join("?" for _ in complaint_ids)
+    placeholders = ",".join("?" for _ in ids)
     rows = cursor.execute(
         f'''
         SELECT complaint_id, actor_role, actor_username, action, note, created_at
@@ -574,36 +492,35 @@ def get_history_map(cursor, complaint_ids):
         WHERE complaint_id IN ({placeholders})
         ORDER BY created_at DESC, id DESC
         ''',
-        complaint_ids
+        ids
     ).fetchall()
 
-    history_map = {complaint_id: [] for complaint_id in complaint_ids}
+    hist = {cid: [] for cid in ids}
     for row in rows:
-        history_map.setdefault(row['complaint_id'], []).append(dict(row))
-    return history_map
+        hist.setdefault(row['complaint_id'], []).append(dict(row))
+    return hist
 
 
-def add_note_entry(cursor, complaint_id, author_role, author_username, note_text):
+def add_note_entry(cursor, cid, author_role, author_uname, note_text):
     cursor.execute(
         '''
         INSERT INTO complaint_notes (complaint_id, author_role, author_username, note_text, created_at)
         VALUES (?, ?, ?, ?, ?)
         ''',
         (
-            complaint_id,
+            cid,
             author_role,
-            author_username,
+            author_uname,
             note_text,
             datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
     )
 
 
-def get_notes_map(cursor, complaint_ids):
-    if not complaint_ids:
+def get_notes_map(cursor, ids):
+    if not ids:
         return {}
-
-    placeholders = ",".join("?" for _ in complaint_ids)
+    placeholders = ",".join("?" for _ in ids)
     rows = cursor.execute(
         f'''
         SELECT id, complaint_id, author_role, author_username, note_text, created_at
@@ -611,13 +528,13 @@ def get_notes_map(cursor, complaint_ids):
         WHERE complaint_id IN ({placeholders})
         ORDER BY created_at DESC, id DESC
         ''',
-        complaint_ids
+        ids
     ).fetchall()
 
-    notes_map = {complaint_id: [] for complaint_id in complaint_ids}
+    notes = {cid: [] for cid in ids}
     for row in rows:
-        notes_map.setdefault(row['complaint_id'], []).append(dict(row))
-    return notes_map
+        notes.setdefault(row['complaint_id'], []).append(dict(row))
+    return notes
 
 
 def get_recent_notes(cursor, limit=10):
@@ -634,7 +551,7 @@ def get_recent_notes(cursor, limit=10):
     return [dict(row) for row in rows]
 
 
-# --- АВТОРИЗАЦИЯ (Осталась без изменений) ---
+# авторизация
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -679,7 +596,7 @@ def login():
                 flash("Error: You are a Staff member. Use the Staff tab.", "danger")
                 return redirect(url_for('login'))
 
-            session.permanent = True  # <--- Включаем строгий таймер
+            session.permanent = True
             session['user_id'] = user['id']
             session['username'] = user['username']
             session['role'] = actual_role
@@ -702,7 +619,7 @@ def logout():
     return redirect(url_for('login'))
 
 
-# --- ПОРТАЛ ЖИТЕЛЯ ---
+# портал жителя
 @app.route('/')
 def home():
     if 'user_id' not in session or session.get('role') != 'citizen':
@@ -712,16 +629,15 @@ def home():
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
-    # Мои жалобы
+    # мои жалобы
     cursor.execute("SELECT * FROM complaints WHERE user_id = ? ORDER BY id DESC", (session['user_id'],))
     my_complaints = attach_report_codes(attach_photo_urls([dict(row) for row in cursor.fetchall()]))
 
-    # ВСЕ жалобы города (для карты) - исключаем отклоненные модератором
+    # все жалобы города для карты, без отклонённых
     cursor.execute("SELECT * FROM complaints WHERE mod_status != 'Rejected'")
     all_complaints = attach_report_codes(attach_photo_urls([dict(row) for row in cursor.fetchall()]))
     conn.close()
 
-    # Статистика
     stats = {
         'total': len(my_complaints),
         'pending': sum(1 for c in my_complaints if get_complaint_category(c) == 'pending'),
@@ -754,45 +670,45 @@ def upload_file():
             return redirect(url_for('home'))
         stored_photo_name, storage_backend = save_photo_bytes(photo_bytes, photo.filename)
 
-        # --- ВОЗВРАЩАЕМ МАГИЮ АНТИДУБЛИКАТА ---
+        # антидубликат
         conn = sqlite3.connect('smart_city.db')
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
 
-        # 1. Достаем все активные проблемы
+        # берём все активные проблемы
         cursor.execute(
             "SELECT id, location, description, lat, lng, ai_suggestion, photo_filename, photo_storage_backend FROM complaints WHERE mod_status != 'Rejected' AND akim_decision != 'Resolved'")
         active_issues = [dict(row) for row in cursor.fetchall()]
         conn.close()
 
-        # 2. Формируем список для ИИ
+        # строим текст со списком для ИИ
         existing_issues_text = "Currently Active Issues in the City:\n"
         if not active_issues:
             existing_issues_text += "No active issues.\n"
         else:
             for issue in active_issues:
-                distance_note = ""
+                dist_note = ""
                 if lat not in (None, "",) and lng not in (None, "") and issue.get('lat') is not None and issue.get('lng') is not None:
                     issue_distance = distance_meters(lat, lng, issue['lat'], issue['lng'])
                     if issue_distance is not None:
-                        distance_note = f" Approximate distance from new point: {int(issue_distance)} meters."
+                        dist_note = f" Approximate distance from new point: {int(issue_distance)} meters."
                 existing_issues_text += (
                     f"- Issue ID {issue['id']}: Located at '{issue['location']}'. "
                     f"Description: '{issue['description']}'. "
                     f"AI note: '{issue.get('ai_suggestion', '')}'."
-                    f"{distance_note}\n"
+                    f"{dist_note}\n"
                 )
 
-        heuristic_duplicate = find_likely_duplicate(location, description, lat, lng, active_issues)
-        if heuristic_duplicate:
+        heuristic_dup = find_likely_duplicate(location, description, lat, lng, active_issues)
+        if heuristic_dup:
             flash(
-                f"A similar report already exists in the system (Report #{heuristic_duplicate['id']}). We will not open a new case because this issue is already under review.",
+                f"A similar report already exists in the system (Report #{heuristic_dup['id']}). We will not open a new case because this issue is already under review.",
                 "warning")
             return redirect(url_for('home'))
 
-        duplicate_candidates = get_duplicate_candidates(location, description, lat, lng, active_issues)
+        dup_candidates = get_duplicate_candidates(location, description, lat, lng, active_issues)
 
-        # 3. Отправляем умный промпт
+        # шлём промпт в ИИ
         try:
             img = Image.open(io.BytesIO(photo_bytes))
             prompt_parts = []
@@ -803,15 +719,15 @@ def upload_file():
             prompt_parts.append("The first attached image is the NEW report photo.")
             prompt_parts.append(existing_issues_text)
 
-            if duplicate_candidates:
+            if dup_candidates:
                 prompt_parts.append("Candidate existing report photos are attached after the new photo in the same order as below:")
-                for idx, issue in enumerate(duplicate_candidates, start=1):
-                    distance_note = ""
+                for idx, issue in enumerate(dup_candidates, start=1):
+                    dist_note = ""
                     issue_distance = distance_meters(lat, lng, issue.get('lat'), issue.get('lng'))
                     if issue_distance is not None:
-                        distance_note = f", distance about {int(issue_distance)} meters"
+                        dist_note = f", distance about {int(issue_distance)} meters"
                     prompt_parts.append(
-                        f"{idx}. Report ID {issue['id']}: location '{issue['location']}', description '{issue['description']}'{distance_note}."
+                        f"{idx}. Report ID {issue['id']}: location '{issue['location']}', description '{issue['description']}'{dist_note}."
                     )
             else:
                 prompt_parts.append("No candidate existing report photos are attached.")
@@ -826,15 +742,15 @@ def upload_file():
             prompt = "\n".join(prompt_parts)
 
             candidate_images = []
-            for issue in duplicate_candidates:
+            for issue in dup_candidates:
                 photo_filename = issue.get('photo_filename')
                 if not photo_filename:
                     continue
-                candidate_bytes = read_photo_bytes(photo_filename, issue.get('photo_storage_backend') or 'local')
-                if not candidate_bytes:
+                cand_bytes = read_photo_bytes(photo_filename, issue.get('photo_storage_backend') or 'local')
+                if not cand_bytes:
                     continue
                 try:
-                    candidate_images.append(Image.open(io.BytesIO(candidate_bytes)))
+                    candidate_images.append(Image.open(io.BytesIO(cand_bytes)))
                 except Exception:
                     continue
 
@@ -843,16 +759,14 @@ def upload_file():
                 contents=[prompt, img, *candidate_images]
             )
             ai_response = response.text.strip()
-            print(f"ИИ ответил: {ai_response}")  # Это выведется в консоль PyCharm
+            print(f"ИИ ответил: {ai_response}")
 
-            # 4. Логика обработки ответа
             if ai_response.startswith("DUPLICATE:"):
                 dup_id = ai_response.split(":")[1].strip()
                 flash(
                     f"A similar report already exists in the system (Report #{dup_id}). We will not open a new case because this issue is already under review.",
                     "warning")
                 return redirect(url_for('home'))
-
             elif ai_response.startswith("NEW:"):
                 ai_category = ai_response.replace("NEW:", "🤖 AI:").strip()
             else:
@@ -862,7 +776,7 @@ def upload_file():
             print(f"Ошибка ИИ: {e}")
             ai_category = "🤖 AI Analysis unavailable"
 
-        # 5. Сохраняем в базу ТОЛЬКО если это НОВАЯ жалоба
+        # сохраняем только если жалоба новая
         conn = sqlite3.connect('smart_city.db')
         cursor = conn.cursor()
         cursor.execute('''
@@ -878,26 +792,22 @@ def upload_file():
     return redirect(url_for('home'))
 
 
-# --- АДМИНКИ (Остались без изменений) ---
-# --- ПОРТАЛ МОДЕРАТОРА ---
-
+# портал модератора
 @app.route('/moderator')
 def moderator_dashboard():
-    # Жесткая защита: пускаем только модератора
     if 'user_id' not in session or session.get('role') != 'moderator':
         return redirect(url_for('login'))
 
     conn = sqlite3.connect('smart_city.db')
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
-    # Теперь достаем ВООБЩЕ ВСЕ жалобы, чтобы показать их в разных вкладках
+    # все жалобы для всех вкладок
     cursor.execute("SELECT * FROM complaints ORDER BY id DESC")
     complaints = attach_report_codes(attach_photo_urls([dict(row) for row in cursor.fetchall()]))
-    history_by_complaint = get_history_map(cursor, [complaint['id'] for complaint in complaints])
-    notes_by_complaint = get_notes_map(cursor, [complaint['id'] for complaint in complaints])
+    history_by_complaint = get_history_map(cursor, [c['id'] for c in complaints])
+    notes_by_complaint = get_notes_map(cursor, [c['id'] for c in complaints])
     conn.close()
 
-    # Считаем статистику для красивых карточек
     stats = {
         'pending': sum(1 for c in complaints if c['mod_status'] == 'Pending'),
         'approved': sum(1 for c in complaints if c['mod_status'] == 'Approved'),
@@ -926,7 +836,7 @@ def mod_action(id):
     if 'user_id' not in session or session.get('role') != 'moderator':
         return redirect(url_for('login'))
     action = request.form.get('mod_action')
-    moderator_comment = (request.form.get('moderator_comment') or '').strip()
+    mod_comment = (request.form.get('moderator_comment') or '').strip()
     reject_reason = (request.form.get('reject_reason') or '').strip()
     active_tab = request.form.get('active_tab', 'overview')
     report_query = request.form.get('report_query', '').strip()
@@ -944,13 +854,13 @@ def mod_action(id):
     stored_reject_reason = reject_reason if action == 'Rejected' else ''
     cursor.execute(
         "UPDATE complaints SET mod_status = ?, moderator_comment = ?, reject_reason = ? WHERE id = ?",
-        (action, moderator_comment, stored_reject_reason, id)
+        (action, mod_comment, stored_reject_reason, id)
     )
     note_parts = []
     if reject_reason:
         note_parts.append(f"Reason: {reject_reason}")
-    if moderator_comment:
-        note_parts.append(f"Comment: {moderator_comment}")
+    if mod_comment:
+        note_parts.append(f"Comment: {mod_comment}")
     add_history_entry(
         cursor,
         id,
@@ -1180,15 +1090,14 @@ def akim_dashboard():
     conn = sqlite3.connect('smart_city.db')
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
-    # Аким видит только те жалобы, которые уже одобрил Модератор
+    # аким видит только одобренные модератором
     cursor.execute("SELECT * FROM complaints WHERE mod_status = 'Approved' ORDER BY id DESC")
     complaints = attach_report_codes(attach_photo_urls([dict(row) for row in cursor.fetchall()]))
-    history_by_complaint = get_history_map(cursor, [complaint['id'] for complaint in complaints])
-    notes_by_complaint = get_notes_map(cursor, [complaint['id'] for complaint in complaints])
+    history_by_complaint = get_history_map(cursor, [c['id'] for c in complaints])
+    notes_by_complaint = get_notes_map(cursor, [c['id'] for c in complaints])
     recent_notes = get_recent_notes(cursor, limit=12)
     conn.close()
 
-    # Считаем KPI для Акима
     stats = {
         'awaiting': sum(1 for c in complaints if c['akim_decision'] == 'Waiting for Akimat'),
         'urgent': sum(1 for c in complaints if c['akim_urgency'] == 'High' and c['akim_decision'] != 'Resolved'),
@@ -1254,10 +1163,8 @@ def akim_action(id):
     flash(f"Akimat decision saved: {decision}.", "success")
     return redirect(url_for('akim_dashboard', tab=active_tab, report_query=report_query))
 
+
 if __name__ == '__main__':
-    # Импортируем os, если вдруг забыли (он у тебя уже есть вверху, но на всякий случай)
     import os
-    # Railway сам выдает порт. Если мы на компе, будет 5000
     port = int(os.environ.get("PORT", 5000))
-    # host='0.0.0.0' ОБЯЗАТЕЛЕН для облака! Без него сайт не выйдет в интернет
     app.run(host='0.0.0.0', port=port, debug=False)
